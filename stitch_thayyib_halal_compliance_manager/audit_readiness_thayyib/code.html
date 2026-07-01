@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Audit Readiness - Thayyib</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "success": "#16A34A",
+                    "on-primary-fixed-variant": "#005137",
+                    "on-tertiary-fixed": "#410004",
+                    "surface-container-low": "#eff5ef",
+                    "primary-container": "#00855d",
+                    "on-primary-container": "#f5fff7",
+                    "inverse-primary": "#68dba9",
+                    "error": "#ba1a1a",
+                    "secondary": "#505f76",
+                    "surface-bright": "#f5fbf5",
+                    "surface-container-highest": "#dee4de",
+                    "on-error-container": "#93000a",
+                    "inverse-on-surface": "#ecf2ec",
+                    "background": "#f5fbf5",
+                    "primary-fixed-dim": "#68dba9",
+                    "on-primary-fixed": "#002114",
+                    "secondary-fixed": "#d3e4fe",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "tertiary": "#9b3e3b",
+                    "outline": "#6d7a72",
+                    "warning": "#D97706",
+                    "tertiary-container": "#ba5551",
+                    "bg-subtle": "#F8FAFC",
+                    "surface-container": "#e9efe9",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "primary-fixed": "#85f8c4",
+                    "border-light": "#E2E8F0",
+                    "on-surface-variant": "#3d4a42",
+                    "on-tertiary-fixed-variant": "#7f2928",
+                    "on-background": "#171d19",
+                    "danger": "#DC2626",
+                    "tertiary-fixed-dim": "#ffb3ae",
+                    "primary": "#006948",
+                    "on-tertiary-container": "#fffbff",
+                    "tertiary-fixed": "#ffdad7",
+                    "on-tertiary": "#ffffff",
+                    "inverse-surface": "#2c322e",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#171d19",
+                    "on-secondary-container": "#54647a",
+                    "secondary-container": "#d0e1fb",
+                    "surface-dim": "#d5dcd6",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e4eae4",
+                    "outline-variant": "#bccac0",
+                    "on-secondary-fixed": "#0b1c30",
+                    "surface-variant": "#dee4de",
+                    "surface": "#f5fbf5",
+                    "text-dark": "#0F172A",
+                    "surface-tint": "#006c4a",
+                    "info": "#2563EB",
+                    "surface-container-lowest": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "24px",
+                    "gutter": "16px",
+                    "stack-sm": "8px",
+                    "container-margin-desktop": "24px",
+                    "sidebar-width": "260px",
+                    "container-margin-mobile": "16px",
+                    "stack-md": "16px"
+            },
+            "fontFamily": {
+                    "headline-sm": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "headline-lg": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "label-sm": [
+                            "Inter"
+                    ],
+                    "headline-lg-mobile": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "label-md": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "headline-sm": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg": [
+                            "30px",
+                            {
+                                    "lineHeight": "38px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-sm": [
+                            "11px",
+                            {
+                                    "lineHeight": "14px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "label-md": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.02em",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen">
+<!-- TopAppBar -->
+<header class="hidden md:flex justify-between items-center h-16 px-container-margin-desktop fixed top-0 right-0 w-[calc(100%-260px)] z-40 bg-surface dark:bg-inverse-surface border-b border-border-light shadow-sm">
+<div class="flex items-center gap-4 w-1/3">
+<!-- Search placeholder -->
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-variation-settings: 'FILL' 0;">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-border-light rounded-DEFAULT font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="Search..." type="text"/>
+</div>
+</div>
+<div class="font-headline-sm text-headline-sm font-bold text-primary">
+            Thayyib
+        </div>
+<div class="flex items-center gap-4 justify-end w-1/3">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-full focus-within:ring-2 focus-within:ring-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-full focus-within:ring-2 focus-within:ring-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">account_circle</span>
+</button>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col h-full py-stack-lg w-sidebar-width h-screen fixed left-0 top-0 bg-surface border-r border-border-light">
+<div class="px-gutter mb-stack-lg flex items-center gap-3">
+<div class="w-10 h-10 rounded-DEFAULT bg-primary-container flex items-center justify-center text-on-primary-container font-headline-sm font-bold">
+                T
+             </div>
+<div>
+<div class="font-headline-md text-headline-md font-bold text-primary">Thayyib</div>
+<div class="font-label-md text-label-md text-on-surface-variant">Halal Compliance</div>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-2 px-gutter overflow-y-auto">
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">inventory_2</span>
+<span class="font-body-md text-body-md">Suppliers</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">description</span>
+<span class="font-body-md text-body-md">Documents</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT text-primary font-bold border-r-4 border-primary bg-surface-container-low hover:bg-surface-container-low transition-colors scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fact_check</span>
+<span class="font-body-md text-body-md">Audit Readiness</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</div>
+<div class="px-gutter mt-auto mb-stack-lg">
+<button class="w-full py-2 bg-primary text-on-primary rounded-lg font-label-md font-bold hover:bg-primary-container transition-colors shadow-sm mb-4">
+                New Audit
+             </button>
+<div class="flex flex-col gap-2 border-t border-border-light pt-4">
+<a class="flex items-center gap-3 px-4 py-2 rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">help</span>
+<span class="font-label-md text-label-md">Help Center</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="md:ml-[260px] pt-16 md:pt-24 px-container-margin-mobile md:px-container-margin-desktop pb-24 max-w-7xl mx-auto">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-stack-lg gap-4">
+<div>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2">Audit Readiness</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Review your compliance status and prepare for upcoming inspections.</p>
+</div>
+<button class="flex items-center gap-2 bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md text-label-md hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 0;">download</span>
+                Export Audit Summary
+            </button>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter mb-stack-lg">
+<!-- Overall Score Card (Span 4) -->
+<div class="lg:col-span-4 bg-surface-container-lowest rounded-xl p-stack-lg border border-border-light flex flex-col items-center justify-center relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-warning to-success"></div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-6 self-start w-full text-center">Overall Readiness</h2>
+<div class="relative w-48 h-48 flex items-center justify-center mb-4">
+<svg class="w-full h-full" viewbox="0 0 120 120">
+<circle class="text-surface-container-highest stroke-current" cx="60" cy="60" fill="transparent" r="54" stroke-width="8"></circle>
+<circle class="text-primary stroke-current progress-ring__circle" cx="60" cy="60" fill="transparent" r="54" stroke-dasharray="339.292" stroke-dashoffset="50.893" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-headline-lg text-headline-lg text-primary">85%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Ready</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant text-center mt-2 max-w-[200px]">You are in a good position, but there are a few items needing attention before the audit.</p>
+</div>
+<!-- Missing Evidence (Span 8) -->
+<div class="lg:col-span-8 bg-error-container/30 rounded-xl p-stack-lg border border-error/20 flex flex-col">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+<h2 class="font-headline-sm text-headline-sm text-on-error-container">Missing Evidence (Action Required)</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">The following critical documents are missing or expired and will cause an immediate non-conformance.</p>
+<div class="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
+<div class="bg-surface-container-lowest border border-error/30 rounded-lg p-3 flex justify-between items-center shadow-sm">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-error/10 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Alpha Foods Co. - Facility Audit Report</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Supplier Certificates • Expired 12 days ago</p>
+</div>
+</div>
+<button class="text-error font-label-sm hover:underline">Resolve</button>
+</div>
+<div class="bg-surface-container-lowest border border-error/30 rounded-lg p-3 flex justify-between items-center shadow-sm">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-error/10 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Q3 Sanitation Standard Operating Procedure (SSOP)</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">SOP Documents • Missing Document</p>
+</div>
+</div>
+<button class="text-error font-label-sm hover:underline">Upload</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Detailed Checklist -->
+<h2 class="font-headline-md text-headline-md text-on-surface mb-6">Detailed Checklist</h2>
+<div class="space-y-stack-md">
+<!-- Category: Supplier Certificates -->
+<div class="bg-surface-container-lowest rounded-xl border border-border-light overflow-hidden shadow-sm">
+<div class="bg-surface-container p-4 border-b border-border-light flex justify-between items-center cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 0;">inventory_2</span>
+<h3 class="font-label-md text-label-md text-on-surface uppercase tracking-wider">Supplier Certificates</h3>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-label-sm text-label-sm bg-success/10 text-success px-2 py-1 rounded-full">4/5 Complete</span>
+<span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<div class="divide-y divide-border-light">
+<!-- Item 1 -->
+<div class="p-4 flex items-center justify-between hover:bg-bg-subtle transition-colors">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-success mt-0.5" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div>
+<p class="font-body-md text-body-md text-on-surface">Valid Halal Certificates for all Tier 1 Suppliers</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Last verified: Oct 12, 2023</p>
+</div>
+</div>
+<button class="text-secondary font-label-sm border border-border-light px-3 py-1.5 rounded hover:bg-surface-container transition-colors">View</button>
+</div>
+<!-- Item 2 -->
+<div class="p-4 flex items-center justify-between hover:bg-bg-subtle transition-colors">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-success mt-0.5" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div>
+<p class="font-body-md text-body-md text-on-surface">Cross-contamination prevention agreements signed</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Last verified: Sep 28, 2023</p>
+</div>
+</div>
+<button class="text-secondary font-label-sm border border-border-light px-3 py-1.5 rounded hover:bg-surface-container transition-colors">View</button>
+</div>
+<!-- Item 3 (Incomplete) -->
+<div class="p-4 flex items-center justify-between bg-error-container/10 hover:bg-error-container/20 transition-colors">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-error mt-0.5" style="font-variation-settings: 'FILL' 0;">radio_button_unchecked</span>
+<div>
+<p class="font-body-md text-body-md text-on-surface">Annual Facility Audit Reports collected</p>
+<p class="font-label-sm text-label-sm text-error mt-1">Missing 1 document (Alpha Foods Co.)</p>
+</div>
+</div>
+<button class="text-primary font-label-sm bg-primary/10 px-3 py-1.5 rounded hover:bg-primary/20 transition-colors">Update</button>
+</div>
+</div>
+</div>
+<!-- Category: Product Ingredients -->
+<div class="bg-surface-container-lowest rounded-xl border border-border-light overflow-hidden shadow-sm">
+<div class="bg-surface-container p-4 border-b border-border-light flex justify-between items-center cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 0;">science</span>
+<h3 class="font-label-md text-label-md text-on-surface uppercase tracking-wider">Product Ingredients</h3>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-label-sm text-label-sm bg-success/10 text-success px-2 py-1 rounded-full">All Complete</span>
+<span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<div class="divide-y divide-border-light hidden">
+<!-- Items would go here, collapsed by default for demo -->
+</div>
+</div>
+<!-- Category: SOP Documents -->
+<div class="bg-surface-container-lowest rounded-xl border border-border-light overflow-hidden shadow-sm">
+<div class="bg-surface-container p-4 border-b border-border-light flex justify-between items-center cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 0;">menu_book</span>
+<h3 class="font-label-md text-label-md text-on-surface uppercase tracking-wider">SOP Documents</h3>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-label-sm text-label-sm bg-warning/10 text-warning px-2 py-1 rounded-full">2/3 Complete</span>
+<span class="material-symbols-outlined text-on-surface-variant">expand_less</span>
+</div>
+</div>
+<div class="divide-y divide-border-light">
+<!-- Item 1 -->
+<div class="p-4 flex items-center justify-between hover:bg-bg-subtle transition-colors">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-success mt-0.5" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div>
+<p class="font-body-md text-body-md text-on-surface">Halal Assurance System (HAS) Manual</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Version 2.1 • Approved</p>
+</div>
+</div>
+<button class="text-secondary font-label-sm border border-border-light px-3 py-1.5 rounded hover:bg-surface-container transition-colors">View</button>
+</div>
+<!-- Item 2 (Incomplete) -->
+<div class="p-4 flex items-center justify-between bg-error-container/10 hover:bg-error-container/20 transition-colors">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-error mt-0.5" style="font-variation-settings: 'FILL' 0;">radio_button_unchecked</span>
+<div>
+<p class="font-body-md text-body-md text-on-surface">Sanitation Standard Operating Procedure (SSOP)</p>
+<p class="font-label-sm text-label-sm text-error mt-1">Missing Q3 Update</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-secondary font-label-sm border border-border-light px-3 py-1.5 rounded hover:bg-surface-container transition-colors">Upload</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+    </style>
+</body></html>
