@@ -4,6 +4,8 @@ import { getSupabaseEnv, hasSupabaseEnv } from "@/lib/supabase/env";
 
 const protectedRoutes = [
   "/",
+  "/ai-analyzer",
+  "/api-testing",
   "/audit-readiness",
   "/documents",
   "/notifications",

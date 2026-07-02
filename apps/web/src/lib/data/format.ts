@@ -1,6 +1,7 @@
 import type {
   DocumentStatus,
   DocumentType,
+  HalalRiskLevel,
   SupplierStatus,
 } from "@/lib/data/types";
 
@@ -117,4 +118,31 @@ export function toDatabaseDocumentType(type: DocumentType) {
   };
 
   return values[type];
+}
+
+export function normalizeHalalRiskLevel(value: string): HalalRiskLevel {
+  if (value === "low" || value === "Low") {
+    return "Low";
+  }
+
+  if (value === "medium" || value === "Medium") {
+    return "Medium";
+  }
+
+  if (value === "high" || value === "High") {
+    return "High";
+  }
+
+  return "Unknown";
+}
+
+export function toDatabaseRiskLevel(value: HalalRiskLevel) {
+  const values: Record<HalalRiskLevel, string> = {
+    Low: "low",
+    Medium: "medium",
+    High: "high",
+    Unknown: "unknown",
+  };
+
+  return values[value];
 }

@@ -4,11 +4,16 @@ import {
   formatDocumentType,
   formatStatus,
   getCertificateStatus,
+  normalizeHalalRiskLevel,
 } from "@/lib/data/format";
 import type {
+  AiAssessment,
+  AiFinding,
+  AiSource,
   AppData,
   ChecklistGroup,
   ComplianceDocument,
+  InventoryItem,
   NotificationItem,
   Supplier,
 } from "@/lib/data/types";
@@ -33,6 +38,8 @@ type SupplierRow = {
   name: string;
   category: string;
   contact_person: string | null;
+  contact_email: string | null;
+  notes: string | null;
   certificate_status: string;
   certificate_expiry_date: string | null;
   documents?: { count: number }[];
@@ -64,6 +71,39 @@ type NotificationRow = {
   priority: string;
   is_read: boolean;
   created_at: string;
+};
+
+type AiAssessmentRow = {
+  id: string;
+  document_id: string | null;
+  product_name: string | null;
+  brand_name: string | null;
+  input_text: string;
+  detected_ingredients: unknown;
+  risk_summary: string;
+  risk_level: string;
+  recommendation_text: string;
+  sources: unknown;
+  confidence_score: number;
+  model_name: string | null;
+  created_at: string;
+};
+
+type InventoryRow = {
+  id: string;
+  name: string;
+  category: string;
+  batch_number: string;
+  quantity: number;
+  unit: string;
+  received_date: string | null;
+  expiry_date: string | null;
+  halal_status: string;
+  risk_level: string;
+  storage_location: string | null;
+  notes: string | null;
+  suppliers: { id: string; name: string } | null;
+  documents: { id: string; name: string } | null;
 };
 
 export async function getAppData(): Promise<AppData> {
@@ -98,8 +138,15 @@ export async function getAppData(): Promise<AppData> {
       return demoAppData;
     }
 
-    const [companyResult, suppliersResult, documentsResult, checklistResult, notificationsResult] =
-      await Promise.all([
+    const [
+      companyResult,
+      suppliersResult,
+      documentsResult,
+      checklistResult,
+      notificationsResult,
+      aiAssessmentsResult,
+      inventoryResult,
+    ] = await Promise.all([
         supabase
           .from("companies")
           .select(
@@ -110,7 +157,7 @@ export async function getAppData(): Promise<AppData> {
         supabase
           .from("suppliers")
           .select(
-            "id,name,category,contact_person,certificate_status,certificate_expiry_date,documents(count)",
+            "id,name,category,contact_person,contact_email,notes,certificate_status,certificate_expiry_date,documents(count)",
           )
           .eq("company_id", companyId)
           .order("created_at", { ascending: false })
@@ -135,6 +182,22 @@ export async function getAppData(): Promise<AppData> {
           .eq("company_id", companyId)
           .order("created_at", { ascending: false })
           .returns<NotificationRow[]>(),
+        supabase
+          .from("halal_ai_assessments")
+          .select(
+            "id,document_id,product_name,brand_name,input_text,detected_ingredients,risk_summary,risk_level,recommendation_text,sources,confidence_score,model_name,created_at",
+          )
+          .eq("company_id", companyId)
+          .order("created_at", { ascending: false })
+          .returns<AiAssessmentRow[]>(),
+        supabase
+          .from("inventory_items")
+          .select(
+            "id,name,category,batch_number,quantity,unit,received_date,expiry_date,halal_status,risk_level,storage_location,notes,suppliers(id,name),documents(id,name)",
+          )
+          .eq("company_id", companyId)
+          .order("created_at", { ascending: false })
+          .returns<InventoryRow[]>(),
       ]);
 
     if (
@@ -142,7 +205,9 @@ export async function getAppData(): Promise<AppData> {
       suppliersResult.error ||
       documentsResult.error ||
       checklistResult.error ||
-      notificationsResult.error
+      notificationsResult.error ||
+      aiAssessmentsResult.error ||
+      inventoryResult.error
     ) {
       return demoAppData;
     }
@@ -161,6 +226,8 @@ export async function getAppData(): Promise<AppData> {
       documents: mapDocuments(documentsResult.data ?? []),
       checklistGroups: mapChecklist(checklistResult.data ?? []),
       notifications: mapNotifications(notificationsResult.data ?? []),
+      aiAssessments: mapAiAssessments(aiAssessmentsResult.data ?? []),
+      inventoryItems: mapInventoryItems(inventoryResult.data ?? []),
     };
   } catch {
     return demoAppData;
@@ -235,7 +302,10 @@ function mapSuppliers(rows: SupplierRow[]): Supplier[] {
           ? "Missing Certificate"
           : calculatedStatus,
       expiryDate: formatDate(row.certificate_expiry_date),
+      expiryDateRaw: row.certificate_expiry_date ?? undefined,
       contact: row.contact_person ?? "Not recorded",
+      contactEmail: row.contact_email ?? "",
+      notes: row.notes ?? "",
       documents: row.documents?.[0]?.count ?? 0,
     };
   });
@@ -250,6 +320,7 @@ function mapDocuments(rows: DocumentRow[]): ComplianceDocument[] {
     supplierId: row.suppliers?.id,
     uploadedAt: formatDate(row.created_at),
     expiryDate: formatDate(row.expiry_date),
+    expiryDateRaw: row.expiry_date ?? undefined,
     status: formatStatus(row.status) as ComplianceDocument["status"],
     storagePath: row.storage_path ?? undefined,
   }));
@@ -298,4 +369,108 @@ function normalizePriority(value: string): NotificationItem["priority"] {
   }
 
   return "Info";
+}
+
+function mapAiAssessments(rows: AiAssessmentRow[]): AiAssessment[] {
+  return rows.map((row) => ({
+    id: row.id,
+    documentId: row.document_id ?? undefined,
+    productName: row.product_name ?? "Untitled product",
+    brandName: row.brand_name ?? "Not recorded",
+    inputText: row.input_text,
+    riskSummary: row.risk_summary,
+    riskLevel: normalizeRiskLevel(row.risk_level),
+    recommendationText: row.recommendation_text,
+    findings: mapFindings(row.detected_ingredients),
+    sources: mapSources(row.sources),
+    confidenceScore: Number(row.confidence_score ?? 0),
+    modelName: row.model_name ?? "thayyib-rule-rag-v1",
+    createdAt: formatDate(row.created_at),
+  }));
+}
+
+function normalizeRiskLevel(value: string): AiAssessment["riskLevel"] {
+  return normalizeHalalRiskLevel(value);
+}
+
+function mapFindings(value: unknown): AiFinding[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const name = getString(item.name);
+    const riskReason = getString(item.risk_reason);
+    const riskLevel = normalizeRiskLevel(getString(item.risk_level));
+
+    if (!name || !riskReason) {
+      return [];
+    }
+
+    return {
+      item: name,
+      risk: riskReason,
+      recommendation:
+        riskLevel === "High"
+          ? "Escalate this item and request supplier source evidence before relying on the ingredient."
+          : "Request clarification and keep supporting evidence for audit review.",
+      riskLevel,
+    };
+  });
+}
+
+function mapSources(value: unknown): AiSource[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const title = getString(item.title);
+
+    if (!title) {
+      return [];
+    }
+
+    return {
+      title,
+      url: getString(item.url) || undefined,
+    };
+  });
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function getString(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function mapInventoryItems(rows: InventoryRow[]): InventoryItem[] {
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    supplier: row.suppliers?.name ?? "Not linked",
+    supplierId: row.suppliers?.id,
+    linkedDocument: row.documents?.name ?? "No evidence linked",
+    documentId: row.documents?.id,
+    batchNumber: row.batch_number,
+    quantity: Number(row.quantity ?? 0),
+    unit: row.unit,
+    receivedDate: formatDate(row.received_date),
+    expiryDate: formatDate(row.expiry_date),
+    halalStatus: formatStatus(row.halal_status) as InventoryItem["halalStatus"],
+    riskLevel: normalizeHalalRiskLevel(row.risk_level),
+    storageLocation: row.storage_location ?? "Not recorded",
+    notes: row.notes ?? "No notes recorded",
+  }));
 }

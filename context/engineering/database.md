@@ -12,6 +12,10 @@
 - audit_checklist_items
 - ai_analysis_results
 - ingredient_risks
+- halal_certifications
+- product_ingredients
+- halal_ai_assessments
+- inventory_items
 - notifications
 - activity_logs
 

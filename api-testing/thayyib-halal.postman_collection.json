@@ -1,0 +1,503 @@
+{
+  "info": {
+    "_postman_id": "b0f54a4a-a6ef-4f45-b3b2-910a4cc82f3d",
+    "name": "Thayyib Halal API Tests",
+    "description": "Postman collection for testing Thayyib halal dummy database endpoints through Supabase REST APIs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.request.headers.upsert({ key: 'apikey', value: pm.environment.get('supabase_key') });"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Auth",
+      "item": [
+        {
+          "name": "Login with email",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{demo_email}}\",\n  \"password\": \"{{demo_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/auth/v1/token?grant_type=password",
+              "host": [
+                "{{supabase_url}}"
+              ],
+              "path": [
+                "auth",
+                "v1",
+                "token"
+              ],
+              "query": [
+                {
+                  "key": "grant_type",
+                  "value": "password"
+                }
+              ]
+            },
+            "description": "Logs in using Supabase Auth and stores access_token, refresh_token, and user_id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login succeeded', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('access_token', json.access_token);",
+                  "pm.environment.set('refresh_token', json.refresh_token);",
+                  "pm.environment.set('user_id', json.user && json.user.id ? json.user.id : '');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Workspace",
+      "item": [
+        {
+          "name": "Get my company",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_key}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/company_members?select=company_id,role,companies(name)&user_id=eq.{{user_id}}&limit=1",
+              "host": [
+                "{{supabase_url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "company_members"
+              ],
+              "query": [
+                {
+                  "key": "select",
+                  "value": "company_id,role,companies(name)"
+                },
+                {
+                  "key": "user_id",
+                  "value": "eq.{{user_id}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Fetches the signed-in user's company membership and stores company_id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Company membership returned', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().length).to.be.above(0);",
+                  "});",
+                  "",
+                  "const rows = pm.response.json();",
+                  "if (rows.length > 0) {",
+                  "  pm.environment.set('company_id', rows[0].company_id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Halal Read Tests",
+      "item": [
+        {
+          "name": "List ingredient risks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_key}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/ingredient_risks?select=id,name,e_code,risk_level,risk_reason,confidence_score&order=risk_level.desc,name.asc",
+              "host": [
+                "{{supabase_url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "ingredient_risks"
+              ],
+              "query": [
+                {
+                  "key": "select",
+                  "value": "id,name,e_code,risk_level,risk_reason,confidence_score"
+                },
+                {
+                  "key": "order",
+                  "value": "risk_level.desc,name.asc"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Ingredient risks returned', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List halal certifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_key}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/halal_certifications?select=id,product_name,brand_name,certificate_number,status,source_name,confidence_score,notes&company_id=eq.{{company_id}}&order=product_name.asc",
+              "host": [
+                "{{supabase_url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "halal_certifications"
+              ],
+              "query": [
+                {
+                  "key": "select",
+                  "value": "id,product_name,brand_name,certificate_number,status,source_name,confidence_score,notes"
+                },
+                {
+                  "key": "company_id",
+                  "value": "eq.{{company_id}}"
+                },
+                {
+                  "key": "order",
+                  "value": "product_name.asc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List product ingredients with risks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_key}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/product_ingredients?select=id,halal_certifications(product_name,certificate_number),ingredient_risks(name,e_code,risk_level,risk_reason)&company_id=eq.{{company_id}}",
+              "host": [
+                "{{supabase_url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "product_ingredients"
+              ],
+              "query": [
+                {
+                  "key": "select",
+                  "value": "id,halal_certifications(product_name,certificate_number),ingredient_risks(name,e_code,risk_level,risk_reason)"
+                },
+                {
+                  "key": "company_id",
+                  "value": "eq.{{company_id}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List saved halal assessments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_key}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/halal_ai_assessments?select=id,product_name,brand_name,risk_level,risk_summary,recommendation_text,confidence_score,created_at&company_id=eq.{{company_id}}&order=created_at.desc",
+              "host": [
+                "{{supabase_url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "halal_ai_assessments"
+              ],
+              "query": [
+                {
+                  "key": "select",
+                  "value": "id,product_name,brand_name,risk_level,risk_summary,recommendation_text,confidence_score,created_at"
+                },
+                {
+                  "key": "company_id",
+                  "value": "eq.{{company_id}}"
+                },
+                {
+                  "key": "order",
+                  "value": "created_at.desc"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Assessment Write Test",
+      "item": [
+        {
+          "name": "Create manual halal assessment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_key}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Prefer",
+                "value": "return=representation"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_id\": \"{{company_id}}\",\n  \"product_name\": \"Postman Test Product\",\n  \"brand_name\": \"Thayyib Demo Foods\",\n  \"input_text\": \"Ingredients: flour, sugar, vanilla extract, gelatin.\",\n  \"detected_ingredients\": [\n    { \"name\": \"Vanilla extract\", \"risk_level\": \"medium\" },\n    { \"name\": \"Gelatin\", \"risk_level\": \"high\" }\n  ],\n  \"risk_summary\": \"Gelatin and vanilla extract require supplier source verification.\",\n  \"risk_level\": \"high\",\n  \"recommendation_text\": \"Potential risk detected. Please verify with a qualified halal compliance officer.\",\n  \"sources\": [\n    { \"title\": \"Ingredient Risk Research Notes\", \"url\": \"context/research/ingredient-risk.md\" }\n  ],\n  \"confidence_score\": 0.76,\n  \"model_name\": \"postman-manual-test\"\n}"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/halal_ai_assessments",
+              "host": [
+                "{{supabase_url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "halal_ai_assessments"
+              ]
+            },
+            "description": "Creates a test assessment. This is manual API testing data, not an AI decision."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Assessment created', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const rows = pm.response.json();",
+                  "if (rows.length > 0) {",
+                  "  pm.environment.set('created_assessment_id', rows[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update manual halal assessment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_key}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Prefer",
+                "value": "return=representation"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"risk_summary\": \"Updated from Postman: gelatin still requires source verification and human review.\",\n  \"confidence_score\": 0.8\n}"
+            },
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/halal_ai_assessments?id=eq.{{created_assessment_id}}",
+              "host": [
+                "{{supabase_url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "halal_ai_assessments"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "eq.{{created_assessment_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Assessment updated', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete manual halal assessment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabase_key}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{supabase_url}}/rest/v1/halal_ai_assessments?id=eq.{{created_assessment_id}}",
+              "host": [
+                "{{supabase_url}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "halal_ai_assessments"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "eq.{{created_assessment_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Assessment deleted', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

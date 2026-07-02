@@ -113,7 +113,9 @@ export default async function AuditReadinessPage() {
                     {item.category} - {item.detail}
                   </p>
                 </div>
-                <SecondaryButton>{item.action}</SecondaryButton>
+                <Link href={getChecklistActionHref(item.action)}>
+                  <SecondaryButton>{item.action}</SecondaryButton>
+                </Link>
               </div>
             ))}
             {missingItems.length === 0 && (
@@ -160,10 +162,12 @@ export default async function AuditReadinessPage() {
                         </p>
                       </div>
                     </div>
-                    <SecondaryButton>
-                      {item.action === "Upload" && <Upload className="h-4 w-4" />}
-                      {item.action}
-                    </SecondaryButton>
+                    <Link href={getChecklistActionHref(item.action)}>
+                      <SecondaryButton>
+                        {item.action === "Upload" && <Upload className="h-4 w-4" />}
+                        {item.action}
+                      </SecondaryButton>
+                    </Link>
                   </div>
                 ))}
               </div>
@@ -173,4 +177,12 @@ export default async function AuditReadinessPage() {
       </section>
     </AppShell>
   );
+}
+
+function getChecklistActionHref(action: string) {
+  if (action === "Upload" || action === "Update") {
+    return "/documents";
+  }
+
+  return "/documents";
 }

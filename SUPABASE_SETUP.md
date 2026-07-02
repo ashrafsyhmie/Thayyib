@@ -31,6 +31,20 @@ file too:
 supabase/demo-seed-upgrade.sql
 ```
 
+If the project was created before the dummy halal intelligence tables were added,
+run this upgrade file as well:
+
+```text
+supabase/halal-dummy-upgrade.sql
+```
+
+If the project was created before inventory tracking was added, run this upgrade
+file too:
+
+```text
+supabase/inventory-upgrade.sql
+```
+
 ## 3. Configure Auth
 
 For local demos, either:

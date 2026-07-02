@@ -2,6 +2,19 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Create `apps/web/.env.local` and add your Supabase values. To enable the
+OpenAI-powered analyzer, add a server-only OpenAI key:
+
+```bash
+OPENAI_API_KEY=your_openai_project_api_key_here
+OPENAI_MODEL=gpt-5.4-mini
+```
+
+For FYP development, use an OpenAI Platform project API key owned by you. For a
+real company deployment, use an organization/project-owned key managed through
+deployment secrets. Never expose `OPENAI_API_KEY` in client-side code or commit
+it to Git.
+
 First, run the development server:
 
 ```bash

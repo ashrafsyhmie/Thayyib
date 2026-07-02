@@ -34,6 +34,22 @@ create type public.document_status as enum (
   'needs_review'
 );
 
+create type public.halal_certification_status as enum (
+  'certified',
+  'expired',
+  'suspended',
+  'revoked',
+  'unknown',
+  'sample_data'
+);
+
+create type public.halal_risk_level as enum (
+  'low',
+  'medium',
+  'high',
+  'unknown'
+);
+
 create table public.companies (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -119,11 +135,113 @@ create table public.activity_logs (
   created_at timestamptz not null default now()
 );
 
+create table public.ingredient_risks (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  common_names text[] not null default '{}',
+  e_code text,
+  risk_level public.halal_risk_level not null default 'unknown',
+  risk_reason text not null,
+  source_name text not null default 'Thayyib sample knowledge base',
+  source_url text,
+  confidence_score numeric(3,2) not null default 0.50 check (confidence_score >= 0 and confidence_score <= 1),
+  is_sample_data boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.halal_certifications (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  product_name text not null,
+  brand_name text,
+  manufacturer_name text not null,
+  certificate_number text,
+  certifying_body text not null,
+  certification_country text not null default 'Malaysia',
+  category text not null,
+  status public.halal_certification_status not null default 'sample_data',
+  valid_from date,
+  valid_until date,
+  source_name text not null,
+  source_url text,
+  confidence_score numeric(3,2) not null default 0.50 check (confidence_score >= 0 and confidence_score <= 1),
+  is_sample_data boolean not null default true,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (company_id, certificate_number)
+);
+
+create table public.product_ingredients (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  halal_certification_id uuid not null references public.halal_certifications(id) on delete cascade,
+  ingredient_risk_id uuid not null references public.ingredient_risks(id) on delete restrict,
+  created_at timestamptz not null default now(),
+  unique (halal_certification_id, ingredient_risk_id)
+);
+
+create table public.halal_ai_assessments (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  document_id uuid references public.documents(id) on delete set null,
+  product_name text,
+  brand_name text,
+  input_text text not null,
+  detected_ingredients jsonb not null default '[]'::jsonb,
+  risk_summary text not null,
+  risk_level public.halal_risk_level not null default 'unknown',
+  recommendation_text text not null default 'Potential risk detected. Please verify with a qualified halal compliance officer.',
+  sources jsonb not null default '[]'::jsonb,
+  confidence_score numeric(3,2) not null default 0.50 check (confidence_score >= 0 and confidence_score <= 1),
+  model_name text,
+  is_sample_data boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create table public.inventory_items (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies(id) on delete cascade,
+  supplier_id uuid references public.suppliers(id) on delete set null,
+  document_id uuid references public.documents(id) on delete set null,
+  ingredient_risk_id uuid references public.ingredient_risks(id) on delete set null,
+  name text not null,
+  category text not null,
+  batch_number text not null,
+  quantity numeric(12,2) not null default 0 check (quantity >= 0),
+  unit text not null,
+  received_date date,
+  expiry_date date,
+  halal_status public.document_status not null default 'needs_review',
+  risk_level public.halal_risk_level not null default 'unknown',
+  storage_location text,
+  notes text,
+  is_sample_data boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (company_id, batch_number, name)
+);
+
 create index suppliers_company_id_idx on public.suppliers(company_id);
 create index documents_company_id_idx on public.documents(company_id);
 create index documents_supplier_id_idx on public.documents(supplier_id);
 create index audit_items_company_id_idx on public.audit_checklist_items(company_id);
 create index notifications_company_id_idx on public.notifications(company_id);
+create index halal_certifications_company_id_idx on public.halal_certifications(company_id);
+create index halal_certifications_status_idx on public.halal_certifications(status);
+create index product_ingredients_company_id_idx on public.product_ingredients(company_id);
+create index product_ingredients_certification_id_idx on public.product_ingredients(halal_certification_id);
+create index product_ingredients_ingredient_risk_id_idx on public.product_ingredients(ingredient_risk_id);
+create index halal_ai_assessments_company_id_idx on public.halal_ai_assessments(company_id);
+create index halal_ai_assessments_document_id_idx on public.halal_ai_assessments(document_id);
+create index ingredient_risks_risk_level_idx on public.ingredient_risks(risk_level);
+create index inventory_items_company_id_idx on public.inventory_items(company_id);
+create index inventory_items_supplier_id_idx on public.inventory_items(supplier_id);
+create index inventory_items_document_id_idx on public.inventory_items(document_id);
+create index inventory_items_ingredient_risk_id_idx on public.inventory_items(ingredient_risk_id);
+create index inventory_items_halal_status_idx on public.inventory_items(halal_status);
+create index inventory_items_risk_level_idx on public.inventory_items(risk_level);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -151,6 +269,18 @@ create trigger audit_items_set_updated_at
 before update on public.audit_checklist_items
 for each row execute function public.set_updated_at();
 
+create trigger ingredient_risks_set_updated_at
+before update on public.ingredient_risks
+for each row execute function public.set_updated_at();
+
+create trigger halal_certifications_set_updated_at
+before update on public.halal_certifications
+for each row execute function public.set_updated_at();
+
+create trigger inventory_items_set_updated_at
+before update on public.inventory_items
+for each row execute function public.set_updated_at();
+
 create or replace function public.seed_demo_workspace(target_company_id uuid, target_user_id uuid default null)
 returns void
 language plpgsql
@@ -168,6 +298,13 @@ declare
   sanitation_sop_id uuid;
   traceability_log_id uuid;
   prime_certificate_id uuid;
+  sample_curry_puff_id uuid;
+  sample_cookies_id uuid;
+  gelatin_id uuid;
+  e471_id uuid;
+  vinegar_id uuid;
+  vanilla_extract_id uuid;
+  e120_id uuid;
 begin
   if auth.uid() is not null and not exists (
     select 1
@@ -177,6 +314,38 @@ begin
   ) then
     raise exception 'Not authorized to seed this workspace';
   end if;
+
+  insert into public.ingredient_risks (
+    name,
+    common_names,
+    e_code,
+    risk_level,
+    risk_reason,
+    source_name,
+    source_url,
+    confidence_score
+  )
+  values
+    ('Gelatin', array['gelatine', 'hydrolyzed gelatin'], 'E441', 'high', 'Animal-derived ingredient that requires source and halal certificate verification.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.80),
+    ('Mono- and diglycerides of fatty acids', array['emulsifier', 'mono-diglycerides', 'E471'], 'E471', 'medium', 'May be plant-based or animal-derived, so supplier source evidence is needed.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.72),
+    ('Vinegar', array['acetic acid vinegar'], null, 'low', 'Common food ingredient, but production process and source should still be documented.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.65),
+    ('Vanilla extract', array['vanilla flavouring', 'natural vanilla extract'], null, 'medium', 'May contain alcohol as a carrier, so formulation and certificate evidence should be checked.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.70),
+    ('Carmine', array['cochineal', 'natural red 4'], 'E120', 'high', 'Animal/insect-derived colourant that should be escalated for qualified halal review.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.78)
+  on conflict (name) do update
+  set
+    common_names = excluded.common_names,
+    e_code = excluded.e_code,
+    risk_level = excluded.risk_level,
+    risk_reason = excluded.risk_reason,
+    source_name = excluded.source_name,
+    source_url = excluded.source_url,
+    confidence_score = excluded.confidence_score;
+
+  select id into gelatin_id from public.ingredient_risks where name = 'Gelatin' limit 1;
+  select id into e471_id from public.ingredient_risks where name = 'Mono- and diglycerides of fatty acids' limit 1;
+  select id into vinegar_id from public.ingredient_risks where name = 'Vinegar' limit 1;
+  select id into vanilla_extract_id from public.ingredient_risks where name = 'Vanilla extract' limit 1;
+  select id into e120_id from public.ingredient_risks where name = 'Carmine' limit 1;
 
   insert into public.suppliers (
     company_id,
@@ -316,6 +485,226 @@ begin
   from public.documents
   where company_id = target_company_id and name = 'Prime Ingredients Certificate'
   limit 1;
+
+  insert into public.inventory_items (
+    company_id,
+    supplier_id,
+    document_id,
+    ingredient_risk_id,
+    name,
+    category,
+    batch_number,
+    quantity,
+    unit,
+    received_date,
+    expiry_date,
+    halal_status,
+    risk_level,
+    storage_location,
+    notes
+  )
+  select
+    target_company_id,
+    supplier_id,
+    document_id,
+    ingredient_risk_id,
+    item_name,
+    category,
+    batch_number,
+    quantity,
+    unit,
+    received_date::date,
+    expiry_date::date,
+    halal_status::public.document_status,
+    risk_level::public.halal_risk_level,
+    storage_location,
+    notes
+  from (
+    values
+      (global_meats_id, global_certificate_id, null, 'Chicken Filling', 'Protein', 'CHK-2026-0701-A', 125.00, 'kg', '2026-06-25', '2026-08-25', 'valid', 'low', 'Cold Room A', 'Linked to Global Meats certificate. Keep batch receiving record for audit.'),
+      (eastern_spices_id, traceability_log_id, vinegar_id, 'Food Vinegar', 'Acidulant', 'VIN-2026-0619-B', 48.00, 'L', '2026-06-19', '2027-06-19', 'complete', 'low', 'Dry Store 2', 'Low risk sample item with traceability evidence.'),
+      (prime_ingredients_id, prime_certificate_id, e471_id, 'Emulsifier E471', 'Additive', 'E471-2026-0530-C', 18.50, 'kg', '2026-05-30', '2027-05-30', 'expired', 'medium', 'Dry Store 3', 'Supplier certificate is expired. Request updated source declaration before use.'),
+      (pure_extracts_id, traceability_log_id, vanilla_extract_id, 'Vanilla Extract', 'Flavoring', 'VAN-2026-0621-D', 12.00, 'L', '2026-06-21', '2027-01-21', 'needs_review', 'medium', 'Flavour Cabinet', 'Check alcohol carrier and supplier certificate before production release.'),
+      (prime_ingredients_id, prime_certificate_id, gelatin_id, 'Gelatin Powder', 'Gelling Agent', 'GEL-2026-0528-E', 9.00, 'kg', '2026-05-28', '2027-05-28', 'missing_document', 'high', 'Quarantine Shelf', 'High risk sample item. Do not rely on it without qualified halal review.')
+  ) as seed_data (
+    supplier_id,
+    document_id,
+    ingredient_risk_id,
+    item_name,
+    category,
+    batch_number,
+    quantity,
+    unit,
+    received_date,
+    expiry_date,
+    halal_status,
+    risk_level,
+    storage_location,
+    notes
+  )
+  where not exists (
+    select 1
+    from public.inventory_items
+    where company_id = target_company_id
+      and batch_number = seed_data.batch_number
+      and name = seed_data.item_name
+  );
+
+  insert into public.halal_certifications (
+    company_id,
+    product_name,
+    brand_name,
+    manufacturer_name,
+    certificate_number,
+    certifying_body,
+    certification_country,
+    category,
+    status,
+    valid_from,
+    valid_until,
+    source_name,
+    source_url,
+    confidence_score,
+    notes
+  )
+  select
+    target_company_id,
+    product_name,
+    brand_name,
+    manufacturer_name,
+    certificate_number,
+    certifying_body,
+    certification_country,
+    category,
+    status::public.halal_certification_status,
+    valid_from::date,
+    valid_until::date,
+    source_name,
+    source_url,
+    confidence_score,
+    notes
+  from (
+    values
+      ('Sample Chicken Curry Puff', 'Thayyib Demo Foods', 'Thayyib Demo Foods Sdn. Bhd.', 'SAMPLE-HALAL-2026-001', 'JAKIM / JAIN placeholder', 'Malaysia', 'Produk Makanan / Minuman', 'sample_data', '2026-01-01', '2026-12-31', 'Sample Data (Not Official JAKIM Record)', 'https://myehalal.halal.gov.my/portal-halal/v1/index.php', 0.45, 'Demo record only. Verify real certificate status in MYeHALAL before operational use.'),
+      ('Sample Chocolate Cookies', 'Thayyib Demo Foods', 'Thayyib Demo Foods Sdn. Bhd.', 'SAMPLE-HALAL-2026-002', 'JAKIM / JAIN placeholder', 'Malaysia', 'Produk Makanan / Minuman', 'sample_data', '2026-02-01', '2026-11-30', 'Sample Data (Not Official JAKIM Record)', 'https://myehalal.halal.gov.my/portal-halal/v1/index.php', 0.45, 'Demo record only. Ingredient risks should be reviewed by a qualified halal compliance officer.')
+  ) as seed_data (
+    product_name,
+    brand_name,
+    manufacturer_name,
+    certificate_number,
+    certifying_body,
+    certification_country,
+    category,
+    status,
+    valid_from,
+    valid_until,
+    source_name,
+    source_url,
+    confidence_score,
+    notes
+  )
+  where not exists (
+    select 1
+    from public.halal_certifications
+    where company_id = target_company_id
+      and certificate_number = seed_data.certificate_number
+  );
+
+  select id into sample_curry_puff_id
+  from public.halal_certifications
+  where company_id = target_company_id and certificate_number = 'SAMPLE-HALAL-2026-001'
+  limit 1;
+
+  select id into sample_cookies_id
+  from public.halal_certifications
+  where company_id = target_company_id and certificate_number = 'SAMPLE-HALAL-2026-002'
+  limit 1;
+
+  insert into public.product_ingredients (
+    company_id,
+    halal_certification_id,
+    ingredient_risk_id
+  )
+  values
+    (target_company_id, sample_curry_puff_id, vinegar_id),
+    (target_company_id, sample_curry_puff_id, e471_id),
+    (target_company_id, sample_cookies_id, vanilla_extract_id),
+    (target_company_id, sample_cookies_id, gelatin_id),
+    (target_company_id, sample_cookies_id, e120_id)
+  on conflict (halal_certification_id, ingredient_risk_id) do nothing;
+
+  insert into public.halal_ai_assessments (
+    company_id,
+    document_id,
+    product_name,
+    brand_name,
+    input_text,
+    detected_ingredients,
+    risk_summary,
+    risk_level,
+    recommendation_text,
+    sources,
+    confidence_score,
+    model_name
+  )
+  select
+    target_company_id,
+    document_id,
+    product_name,
+    brand_name,
+    input_text,
+    detected_ingredients::jsonb,
+    risk_summary,
+    risk_level::public.halal_risk_level,
+    'Potential risk detected. Please verify with a qualified halal compliance officer.',
+    sources::jsonb,
+    confidence_score,
+    model_name
+  from (
+    values
+      (
+        traceability_log_id,
+        'Sample Chicken Curry Puff',
+        'Thayyib Demo Foods',
+        'Ingredients: wheat flour, chicken, curry powder, vinegar, emulsifier E471.',
+        '[{"name":"Vinegar","risk_level":"low"},{"name":"E471","risk_level":"medium"}]',
+        'E471 requires supplier source evidence because it can be plant-based or animal-derived.',
+        'medium',
+        '[{"title":"Ingredient Risk Research Notes","url":"context/research/ingredient-risk.md"},{"title":"MYeHALAL Status Check","url":"https://myehalal.halal.gov.my/portal-halal/v1/index.php"}]',
+        0.72,
+        'sample-assessment-v1'
+      ),
+      (
+        traceability_log_id,
+        'Sample Chocolate Cookies',
+        'Thayyib Demo Foods',
+        'Ingredients: wheat flour, cocoa powder, vanilla extract, gelatin, colour E120.',
+        '[{"name":"Vanilla extract","risk_level":"medium"},{"name":"Gelatin","risk_level":"high"},{"name":"E120","risk_level":"high"}]',
+        'Gelatin and E120 should be escalated because their source can create halal compliance risk.',
+        'high',
+        '[{"title":"Ingredient Risk Research Notes","url":"context/research/ingredient-risk.md"},{"title":"MYeHALAL Status Check","url":"https://myehalal.halal.gov.my/portal-halal/v1/index.php"}]',
+        0.78,
+        'sample-assessment-v1'
+      )
+  ) as seed_data (
+    document_id,
+    product_name,
+    brand_name,
+    input_text,
+    detected_ingredients,
+    risk_summary,
+    risk_level,
+    sources,
+    confidence_score,
+    model_name
+  )
+  where not exists (
+    select 1
+    from public.halal_ai_assessments
+    where company_id = target_company_id
+      and product_name = seed_data.product_name
+      and model_name = seed_data.model_name
+  );
 
   insert into public.audit_checklist_items (
     company_id,
@@ -561,6 +950,11 @@ alter table public.documents enable row level security;
 alter table public.audit_checklist_items enable row level security;
 alter table public.notifications enable row level security;
 alter table public.activity_logs enable row level security;
+alter table public.ingredient_risks enable row level security;
+alter table public.halal_certifications enable row level security;
+alter table public.product_ingredients enable row level security;
+alter table public.halal_ai_assessments enable row level security;
+alter table public.inventory_items enable row level security;
 
 create policy "members can view their companies"
 on public.companies for select
@@ -628,6 +1022,102 @@ using (company_id in (select public.current_user_company_ids()));
 create policy "members can insert activity logs"
 on public.activity_logs for insert
 with check (company_id in (select public.current_user_company_ids()));
+
+create policy "authenticated users can read ingredient risks"
+on public.ingredient_risks for select
+to authenticated
+using (true);
+
+create policy "members can read halal certifications"
+on public.halal_certifications for select
+to authenticated
+using (company_id in (select public.current_user_company_ids()));
+
+create policy "members can insert halal certifications"
+on public.halal_certifications for insert
+to authenticated
+with check (company_id in (select public.current_user_company_ids()));
+
+create policy "members can update halal certifications"
+on public.halal_certifications for update
+to authenticated
+using (company_id in (select public.current_user_company_ids()))
+with check (company_id in (select public.current_user_company_ids()));
+
+create policy "members can delete halal certifications"
+on public.halal_certifications for delete
+to authenticated
+using (company_id in (select public.current_user_company_ids()));
+
+create policy "members can read product ingredients"
+on public.product_ingredients for select
+to authenticated
+using (company_id in (select public.current_user_company_ids()));
+
+create policy "members can insert product ingredients"
+on public.product_ingredients for insert
+to authenticated
+with check (company_id in (select public.current_user_company_ids()));
+
+create policy "members can update product ingredients"
+on public.product_ingredients for update
+to authenticated
+using (company_id in (select public.current_user_company_ids()))
+with check (company_id in (select public.current_user_company_ids()));
+
+create policy "members can delete product ingredients"
+on public.product_ingredients for delete
+to authenticated
+using (company_id in (select public.current_user_company_ids()));
+
+create policy "members can read halal ai assessments"
+on public.halal_ai_assessments for select
+to authenticated
+using (company_id in (select public.current_user_company_ids()));
+
+create policy "members can insert halal ai assessments"
+on public.halal_ai_assessments for insert
+to authenticated
+with check (company_id in (select public.current_user_company_ids()));
+
+create policy "members can update halal ai assessments"
+on public.halal_ai_assessments for update
+to authenticated
+using (company_id in (select public.current_user_company_ids()))
+with check (company_id in (select public.current_user_company_ids()));
+
+create policy "members can delete halal ai assessments"
+on public.halal_ai_assessments for delete
+to authenticated
+using (company_id in (select public.current_user_company_ids()));
+
+create policy "members can read inventory items"
+on public.inventory_items for select
+to authenticated
+using (company_id in (select public.current_user_company_ids()));
+
+create policy "members can insert inventory items"
+on public.inventory_items for insert
+to authenticated
+with check (company_id in (select public.current_user_company_ids()));
+
+create policy "members can update inventory items"
+on public.inventory_items for update
+to authenticated
+using (company_id in (select public.current_user_company_ids()))
+with check (company_id in (select public.current_user_company_ids()));
+
+create policy "members can delete inventory items"
+on public.inventory_items for delete
+to authenticated
+using (company_id in (select public.current_user_company_ids()));
+
+grant usage on schema public to authenticated;
+grant select on public.ingredient_risks to authenticated;
+grant select, insert, update, delete on public.halal_certifications to authenticated;
+grant select, insert, update, delete on public.product_ingredients to authenticated;
+grant select, insert, update, delete on public.halal_ai_assessments to authenticated;
+grant select, insert, update, delete on public.inventory_items to authenticated;
 
 insert into storage.buckets (id, name, public)
 values ('documents', 'documents', false)

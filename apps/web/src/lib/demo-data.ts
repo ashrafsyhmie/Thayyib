@@ -1,8 +1,11 @@
 import {
+  Activity,
   Bell,
+  Brain,
   ClipboardCheck,
   FileText,
   LayoutDashboard,
+  Package,
   Settings,
   Store,
 } from "lucide-react";
@@ -12,12 +15,16 @@ import type {
   ComplianceDocument,
   NotificationItem,
   Supplier,
+  InventoryItem,
 } from "@/lib/data/types";
 
 export const navigationItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Suppliers", href: "/suppliers", icon: Store },
   { label: "Documents", href: "/documents", icon: FileText },
+  { label: "Inventory", href: "/inventory", icon: Package },
+  { label: "AI Analyzer", href: "/ai-analyzer", icon: Brain },
+  { label: "API Testing", href: "/api-testing", icon: Activity },
   {
     label: "Audit Readiness",
     href: "/audit-readiness",
@@ -34,7 +41,10 @@ export const suppliers: Supplier[] = [
     category: "Poultry",
     status: "Valid",
     expiryDate: "Oct 12, 2026",
+    expiryDateRaw: "2026-10-12",
     contact: "Sarah Jenkins",
+    contactEmail: "compliance@globalmeats.example",
+    notes: "Primary poultry supplier. Certificate checked during onboarding.",
     documents: 8,
   },
   {
@@ -43,7 +53,10 @@ export const suppliers: Supplier[] = [
     category: "Dairy Products",
     status: "Expiring Soon",
     expiryDate: "Jul 10, 2026",
+    expiryDateRaw: "2026-07-10",
     contact: "Omar Farooq",
+    contactEmail: "omar@crescentdairy.example",
+    notes: "Renewal certificate requested before the next internal audit.",
     documents: 5,
   },
   {
@@ -52,7 +65,10 @@ export const suppliers: Supplier[] = [
     category: "Spices & Seasonings",
     status: "Valid",
     expiryDate: "May 15, 2027",
+    expiryDateRaw: "2027-05-15",
     contact: "Aisha Khan",
+    contactEmail: "qa@easternspices.example",
+    notes: "Supplier provides spice blends and annual facility evidence.",
     documents: 6,
   },
   {
@@ -61,7 +77,10 @@ export const suppliers: Supplier[] = [
     category: "Additives",
     status: "Expired",
     expiryDate: "May 30, 2026",
+    expiryDateRaw: "2026-05-30",
     contact: "David Chen",
+    contactEmail: "david@primeingredients.example",
+    notes: "Certificate has expired. Follow up before accepting new shipments.",
     documents: 3,
   },
   {
@@ -71,6 +90,8 @@ export const suppliers: Supplier[] = [
     status: "Missing Certificate",
     expiryDate: "N/A",
     contact: "Linda Roberts",
+    contactEmail: "linda@pureextracts.example",
+    notes: "Flavoring supplier needs a current halal certificate uploaded.",
     documents: 2,
   },
 ];
@@ -83,6 +104,7 @@ export const documents: ComplianceDocument[] = [
     supplier: "Global Meats Inc.",
     uploadedAt: "Jun 18, 2026",
     expiryDate: "Oct 12, 2026",
+    expiryDateRaw: "2026-10-12",
     status: "Valid",
   },
   {
@@ -92,6 +114,7 @@ export const documents: ComplianceDocument[] = [
     supplier: "Crescent Dairy",
     uploadedAt: "May 29, 2026",
     expiryDate: "Jul 10, 2026",
+    expiryDateRaw: "2026-07-10",
     status: "Expiring Soon",
   },
   {
@@ -119,6 +142,7 @@ export const documents: ComplianceDocument[] = [
     supplier: "Prime Ingredients",
     uploadedAt: "Jan 05, 2026",
     expiryDate: "May 30, 2026",
+    expiryDateRaw: "2026-05-30",
     status: "Expired",
   },
 ];
@@ -224,6 +248,63 @@ export const notifications: NotificationItem[] = [
   },
 ];
 
+export const inventoryItems: InventoryItem[] = [
+  {
+    id: "demo-inventory-1",
+    name: "Chicken Filling",
+    category: "Protein",
+    supplier: "Global Meats Inc.",
+    supplierId: "demo-supplier-1",
+    linkedDocument: "Global Meats Halal Certificate",
+    documentId: "demo-document-1",
+    batchNumber: "CHK-2026-0701-A",
+    quantity: 125,
+    unit: "kg",
+    receivedDate: "Jun 25, 2026",
+    expiryDate: "Aug 25, 2026",
+    halalStatus: "Valid",
+    riskLevel: "Low",
+    storageLocation: "Cold Room A",
+    notes: "Linked to supplier certificate. Keep batch receiving record for audit.",
+  },
+  {
+    id: "demo-inventory-2",
+    name: "Emulsifier E471",
+    category: "Additive",
+    supplier: "Prime Ingredients",
+    supplierId: "demo-supplier-4",
+    linkedDocument: "Prime Ingredients Certificate",
+    documentId: "demo-document-5",
+    batchNumber: "E471-2026-0530-C",
+    quantity: 18.5,
+    unit: "kg",
+    receivedDate: "May 30, 2026",
+    expiryDate: "May 30, 2027",
+    halalStatus: "Expired",
+    riskLevel: "Medium",
+    storageLocation: "Dry Store 3",
+    notes: "Supplier certificate is expired. Request updated source declaration before use.",
+  },
+  {
+    id: "demo-inventory-3",
+    name: "Gelatin Powder",
+    category: "Gelling Agent",
+    supplier: "Prime Ingredients",
+    supplierId: "demo-supplier-4",
+    linkedDocument: "Prime Ingredients Certificate",
+    documentId: "demo-document-5",
+    batchNumber: "GEL-2026-0528-E",
+    quantity: 9,
+    unit: "kg",
+    receivedDate: "May 28, 2026",
+    expiryDate: "May 28, 2027",
+    halalStatus: "Missing Document",
+    riskLevel: "High",
+    storageLocation: "Quarantine Shelf",
+    notes: "High risk sample item. Do not rely on it without qualified halal review.",
+  },
+];
+
 export const demoAppData: AppData = {
   setupMode: true,
   company: {
@@ -238,4 +319,46 @@ export const demoAppData: AppData = {
   documents,
   checklistGroups,
   notifications,
+  inventoryItems,
+  aiAssessments: [
+    {
+      id: "demo-ai-assessment-1",
+      documentId: "demo-document-4",
+      productName: "Sample Chocolate Cookies",
+      brandName: "Thayyib Demo Foods",
+      inputText:
+        "Ingredients: wheat flour, cocoa powder, vanilla extract, gelatin, colour E120.",
+      riskSummary:
+        "3 potential ingredient risk terms were detected. Highest detected risk level: high.",
+      riskLevel: "High",
+      recommendationText:
+        "Potential risk detected. Please verify with a qualified halal compliance officer.",
+      findings: [
+        {
+          item: "Gelatin",
+          risk: "Animal-derived ingredient that requires source and halal certificate verification.",
+          recommendation:
+            "Escalate this item and request supplier source evidence before relying on the ingredient.",
+          riskLevel: "High",
+        },
+        {
+          item: "Carmine",
+          risk: "Animal/insect-derived colourant that should be escalated for qualified halal review.",
+          recommendation:
+            "Escalate this item and request supplier source evidence before relying on the ingredient.",
+          riskLevel: "High",
+        },
+      ],
+      sources: [
+        { title: "Uploaded document text" },
+        {
+          title: "Ingredient Risk Research Notes",
+          url: "context/research/ingredient-risk.md",
+        },
+      ],
+      confidenceScore: 0.78,
+      modelName: "thayyib-rule-rag-v1",
+      createdAt: "Jun 21, 2026",
+    },
+  ],
 };

@@ -47,7 +47,13 @@ export function StatusBadge({ status }: { status: string }) {
     "Needs Review": "bg-amber-50 text-warning",
     High: "bg-red-50 text-danger",
     Medium: "bg-amber-50 text-warning",
+    Low: "bg-emerald-50 text-success",
+    Unknown: "bg-slate-100 text-slate-600",
     Info: "bg-blue-50 text-info",
+    Passed: "bg-emerald-50 text-success",
+    Failed: "bg-red-50 text-danger",
+    Ready: "bg-blue-50 text-info",
+    Skipped: "bg-slate-100 text-slate-600",
   };
 
   return (

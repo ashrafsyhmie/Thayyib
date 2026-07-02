@@ -13,6 +13,13 @@
 9. Notifications
 10. Settings
 
+## Post-MVP Screens
+
+1. Branches / Locations
+2. Inventory-Lite
+3. Stock Item Detail
+4. Kitchen Kiosk View
+
 ## Dashboard Widgets
 
 - Compliance score
@@ -20,3 +27,11 @@
 - High-risk alerts
 - Recent documents
 - Audit readiness progress
+
+## Future Kiosk Widgets
+
+- Urgent branch issues
+- Expiring stock
+- Expired stock
+- Items needing compliance review
+- Supplier or certificate warnings

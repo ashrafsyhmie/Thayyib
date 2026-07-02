@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Mail, StickyNote, Upload } from "lucide-react";
+import { updateSupplierAction } from "@/app/actions";
 import { AppShell } from "@/components/app-shell";
 import { Card, PageHeader, SecondaryButton, SetupNotice, StatusBadge } from "@/components/ui";
 import { getAppData } from "@/lib/data/app-data";
@@ -8,10 +9,21 @@ type SupplierDetailPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    error?: string;
+    message?: string;
+  }>;
 };
 
-export default async function SupplierDetailPage({ params }: SupplierDetailPageProps) {
-  const [{ id }, appData] = await Promise.all([params, getAppData()]);
+export default async function SupplierDetailPage({
+  params,
+  searchParams,
+}: SupplierDetailPageProps) {
+  const [{ id }, appData, query] = await Promise.all([
+    params,
+    getAppData(),
+    searchParams,
+  ]);
   const supplier = appData.suppliers.find((item) => item.id === id);
   const linkedDocuments = appData.documents.filter(
     (document) => document.supplierId === id || document.supplier === supplier?.name,
@@ -51,6 +63,7 @@ export default async function SupplierDetailPage({ params }: SupplierDetailPageP
         }
       />
       <SetupNotice show={appData.setupMode} />
+      <Feedback error={query.error} message={query.message} />
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-[360px_1fr]">
         <Card className="p-6">
@@ -71,14 +84,24 @@ export default async function SupplierDetailPage({ params }: SupplierDetailPageP
           </dl>
 
           <div className="mt-6 grid gap-3">
-            <button className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white">
+            <Link
+              className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white"
+              href={`/documents?supplierId=${supplier.id}`}
+            >
               <Upload className="h-4 w-4" />
               Upload Certificate
-            </button>
-            <button className="flex items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+            </Link>
+            <a
+              className="flex items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+              href={
+                supplier.contactEmail
+                  ? `mailto:${supplier.contactEmail}`
+                  : "mailto:"
+              }
+            >
               <Mail className="h-4 w-4" />
               Contact Supplier
-            </button>
+            </a>
           </div>
         </Card>
 
@@ -91,10 +114,57 @@ export default async function SupplierDetailPage({ params }: SupplierDetailPageP
               </h2>
             </div>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Keep supplier-specific notes here during implementation. This area
-              is ready for notes and audit follow-up history once notes are wired
-              to the database.
+              {supplier.notes || "No supplier notes recorded yet."}
             </p>
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold text-slate-950">
+              Edit Supplier
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Update certificate metadata so expiry tracking and reminders stay
+              current.
+            </p>
+            <form action={updateSupplierAction} className="mt-5 grid gap-4 md:grid-cols-2">
+              <input name="supplierId" type="hidden" value={supplier.id} />
+              <Field label="Supplier Name" name="name" value={supplier.name} />
+              <Field label="Category" name="category" value={supplier.category} />
+              <Field
+                label="Contact Person"
+                name="contactPerson"
+                required={false}
+                value={supplier.contact === "Not recorded" ? "" : supplier.contact}
+              />
+              <Field
+                label="Contact Email"
+                name="contactEmail"
+                required={false}
+                type="email"
+                value={supplier.contactEmail}
+              />
+              <Field
+                label="Certificate Expiry Date"
+                name="certificateExpiryDate"
+                required={false}
+                type="date"
+                value={supplier.expiryDateRaw ?? ""}
+              />
+              <label className="block md:col-span-2">
+                <span className="text-sm font-semibold text-slate-900">Notes</span>
+                <textarea
+                  className="mt-2 min-h-24 w-full rounded-lg border border-border px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  defaultValue={supplier.notes}
+                  name="notes"
+                />
+              </label>
+              <button
+                className="rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-slate-300 md:col-span-2"
+                disabled={appData.setupMode}
+              >
+                Save Supplier Changes
+              </button>
+            </form>
           </Card>
 
           <Card className="overflow-hidden">
@@ -141,3 +211,47 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function Field({
+  label,
+  name,
+  value,
+  type = "text",
+  required = true,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  type?: string;
+  required?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-semibold text-slate-900">{label}</span>
+      <input
+        className="mt-2 h-11 w-full rounded-lg border border-border px-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
+        defaultValue={value}
+        name={name}
+        required={required}
+        type={type}
+      />
+    </label>
+  );
+}
+
+function Feedback({ error, message }: { error?: string; message?: string }) {
+  if (!error && !message) {
+    return null;
+  }
+
+  return (
+    <div
+      className={`rounded-xl border px-5 py-4 text-sm ${
+        error
+          ? "border-red-100 bg-red-50 text-danger"
+          : "border-emerald-100 bg-emerald-50 text-success"
+      }`}
+    >
+      {error ?? message}
+    </div>
+  );
+}

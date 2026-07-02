@@ -25,7 +25,10 @@ export type Supplier = {
   category: string;
   status: SupplierStatus;
   expiryDate: string;
+  expiryDateRaw?: string;
   contact: string;
+  contactEmail: string;
+  notes: string;
   documents: number;
 };
 
@@ -37,6 +40,7 @@ export type ComplianceDocument = {
   supplierId?: string;
   uploadedAt: string;
   expiryDate: string;
+  expiryDateRaw?: string;
   status: DocumentStatus;
   storagePath?: string;
 };
@@ -65,6 +69,55 @@ export type NotificationItem = {
   unread: boolean;
 };
 
+export type HalalRiskLevel = "Low" | "Medium" | "High" | "Unknown";
+
+export type AiFinding = {
+  item: string;
+  risk: string;
+  recommendation: string;
+  riskLevel: HalalRiskLevel;
+};
+
+export type AiSource = {
+  title: string;
+  url?: string;
+};
+
+export type AiAssessment = {
+  id: string;
+  documentId?: string;
+  productName: string;
+  brandName: string;
+  inputText: string;
+  riskSummary: string;
+  riskLevel: HalalRiskLevel;
+  recommendationText: string;
+  findings: AiFinding[];
+  sources: AiSource[];
+  confidenceScore: number;
+  modelName: string;
+  createdAt: string;
+};
+
+export type InventoryItem = {
+  id: string;
+  name: string;
+  category: string;
+  supplier: string;
+  supplierId?: string;
+  linkedDocument: string;
+  documentId?: string;
+  batchNumber: string;
+  quantity: number;
+  unit: string;
+  receivedDate: string;
+  expiryDate: string;
+  halalStatus: DocumentStatus;
+  riskLevel: HalalRiskLevel;
+  storageLocation: string;
+  notes: string;
+};
+
 export type Company = {
   id: string;
   name: string;
@@ -80,6 +133,7 @@ export type AppData = {
   documents: ComplianceDocument[];
   checklistGroups: ChecklistGroup[];
   notifications: NotificationItem[];
+  aiAssessments: AiAssessment[];
+  inventoryItems: InventoryItem[];
   setupMode: boolean;
 };
-

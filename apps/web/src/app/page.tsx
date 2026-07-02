@@ -1,4 +1,5 @@
-import { FileText, ReceiptText, Store, TriangleAlert } from "lucide-react";
+import Link from "next/link";
+import { Brain, FileText, ReceiptText, Store, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Card, PageHeader, SetupNotice } from "@/components/ui";
@@ -13,6 +14,9 @@ export default async function DashboardPage() {
   const expiringSuppliers = appData.suppliers.filter(
     (supplier) => supplier.status === "Expiring Soon",
   );
+  const aiRiskAlerts = appData.aiAssessments.filter((assessment) =>
+    ["High", "Medium"].includes(assessment.riskLevel),
+  ).length;
 
   return (
     <AppShell activePath="/">
@@ -36,6 +40,13 @@ export default async function DashboardPage() {
           detail="Requires attention"
           icon={<FileText className="h-5 w-5" />}
           tone="danger"
+        />
+        <MetricCard
+          title="AI Risk Alerts"
+          value={String(aiRiskAlerts)}
+          detail="Require human verification"
+          icon={<Brain className="h-5 w-5" />}
+          tone={aiRiskAlerts > 0 ? "danger" : "success"}
         />
         <ChecklistCard appData={appData} />
         <RenewalsCard appData={appData} />
@@ -104,9 +115,12 @@ function ComplianceScoreCard({ appData }: { appData: AppData }) {
               {expiringCount} certificates are expiring within 30 days
             </p>
           </div>
-          <button className="w-full rounded-lg border border-primary/20 bg-primary-soft px-4 py-3 text-sm font-semibold text-primary transition hover:bg-emerald-200">
+          <Link
+            className="block w-full rounded-lg border border-primary/20 bg-primary-soft px-4 py-3 text-center text-sm font-semibold text-primary transition hover:bg-emerald-200"
+            href="/audit-readiness"
+          >
             View Action Plan
-          </button>
+          </Link>
         </div>
       </div>
     </Card>
