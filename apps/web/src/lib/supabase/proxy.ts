@@ -7,6 +7,7 @@ const protectedRoutes = [
   "/ai-analyzer",
   "/api-testing",
   "/audit-readiness",
+  "/dashboard",
   "/documents",
   "/notifications",
   "/settings",
