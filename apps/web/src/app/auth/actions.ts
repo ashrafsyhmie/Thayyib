@@ -125,6 +125,32 @@ export async function signInWithGoogleAction(formData: FormData) {
   redirect("/login?error=Unable%20to%20start%20Google%20sign%20in");
 }
 
+export async function resetPasswordAction(formData: FormData) {
+  if (!hasSupabaseEnv()) {
+    redirect("/forgot-password?error=Supabase%20is%20not%20configured%20yet");
+  }
+
+  const email = getRequiredString(formData, "email");
+  const origin = (await headers()).get("origin");
+  const supabase = await createClient();
+
+  if (!origin) {
+    redirect("/forgot-password?error=Unable%20to%20start%20password%20reset");
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/login?message=Password%20reset%20completed`,
+  });
+
+  if (error) {
+    redirect(`/forgot-password?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(
+    "/forgot-password?message=Password%20reset%20link%20sent%20if%20the%20email%20exists",
+  );
+}
+
 function getOptionalString(formData: FormData, key: string) {
   const value = formData.get(key);
 

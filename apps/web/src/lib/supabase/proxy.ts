@@ -9,6 +9,7 @@ const protectedRoutes = [
   "/audit-readiness",
   "/dashboard",
   "/documents",
+  "/inventory",
   "/notifications",
   "/settings",
   "/suppliers",

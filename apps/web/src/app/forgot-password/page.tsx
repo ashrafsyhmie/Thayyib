@@ -1,7 +1,19 @@
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
+import { resetPasswordAction } from "@/app/auth/actions";
 
-export default function ForgotPasswordPage() {
+type ForgotPasswordPageProps = {
+  searchParams: Promise<{
+    error?: string;
+    message?: string;
+  }>;
+};
+
+export default async function ForgotPasswordPage({
+  searchParams,
+}: ForgotPasswordPageProps) {
+  const params = await searchParams;
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <section className="w-full max-w-md rounded-xl border border-border bg-white p-8 shadow-sm">
@@ -13,25 +25,30 @@ export default function ForgotPasswordPage() {
             Reset password
           </h1>
           <p className="mt-2 text-slate-600">
-            Password reset email flow will be connected after Supabase email
-            settings are finalized.
+            Enter your account email and we will send a password reset link.
           </p>
         </div>
 
-        <label className="mt-8 block">
-          <span className="text-sm font-semibold text-slate-900">
-            Email Address
-          </span>
-          <input
-            className="mt-2 h-12 w-full rounded-lg border border-border px-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
-            placeholder="user@company.com"
-            type="email"
-          />
-        </label>
+        <Feedback error={params.error} message={params.message} />
 
-        <button className="mt-5 flex h-12 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:bg-primary-dark">
-          Send Reset Link
-        </button>
+        <form action={resetPasswordAction} className="mt-8">
+          <label className="block">
+            <span className="text-sm font-semibold text-slate-900">
+              Email Address
+            </span>
+            <input
+              className="mt-2 h-12 w-full rounded-lg border border-border px-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
+              name="email"
+              placeholder="user@company.com"
+              required
+              type="email"
+            />
+          </label>
+
+          <button className="mt-5 flex h-12 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:bg-primary-dark">
+            Send Reset Link
+          </button>
+        </form>
 
         <p className="mt-6 text-center text-sm text-slate-600">
           <Link className="font-semibold text-primary hover:text-primary-dark" href="/login">
@@ -40,5 +57,23 @@ export default function ForgotPasswordPage() {
         </p>
       </section>
     </main>
+  );
+}
+
+function Feedback({ error, message }: { error?: string; message?: string }) {
+  if (!error && !message) {
+    return null;
+  }
+
+  return (
+    <div
+      className={`mt-6 rounded-lg border px-4 py-3 text-sm ${
+        error
+          ? "border-red-100 bg-red-50 text-danger"
+          : "border-emerald-100 bg-emerald-50 text-success"
+      }`}
+    >
+      {error ?? message}
+    </div>
   );
 }

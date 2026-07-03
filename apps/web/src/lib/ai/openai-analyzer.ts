@@ -13,7 +13,7 @@ type OpenAiFinding = {
 
 type OpenAiSource = {
   title: string;
-  url?: string;
+  url: string;
 };
 
 type OpenAiAnalysis = {
@@ -78,7 +78,7 @@ const responseSchema = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["title"],
+        required: ["title", "url"],
         properties: {
           title: { type: "string" },
           url: { type: "string" },
@@ -156,6 +156,7 @@ Rules:
 - Flag only potential risks and evidence gaps.
 - Use the provided knowledge as supporting context.
 - Include "Uploaded document text" as a source when relevant.
+- For sources without a URL, use an empty string for url.
 - Keep recommendations practical for a compliance officer.
 
 Known ingredient risk context:
@@ -174,7 +175,10 @@ function normalizeOpenAiResult(result: OpenAiAnalysis): AnalysisResult {
   }));
   const sources: AiSource[] = dedupeSources([
     { title: "Uploaded document text" },
-    ...result.sources,
+    ...result.sources.map((source) => ({
+      title: source.title,
+      url: source.url || undefined,
+    })),
   ]);
 
   return {

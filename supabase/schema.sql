@@ -1015,6 +1015,10 @@ on public.notifications for update
 using (company_id in (select public.current_user_company_ids()))
 with check (company_id in (select public.current_user_company_ids()));
 
+create policy "members can delete notifications"
+on public.notifications for delete
+using (company_id in (select public.current_user_company_ids()));
+
 create policy "members can read activity logs"
 on public.activity_logs for select
 using (company_id in (select public.current_user_company_ids()));

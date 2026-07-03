@@ -44,10 +44,13 @@ function Sidebar({ activePath }: { activePath: string }) {
       </Link>
 
       <div className="px-6 pb-6">
-        <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-dark">
+        <Link
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-dark"
+          href="/audit-readiness"
+        >
           <Plus className="h-4 w-4" />
           New Audit
-        </button>
+        </Link>
       </div>
 
       <nav className="flex-1 space-y-1 px-5">
@@ -72,13 +75,13 @@ function Sidebar({ activePath }: { activePath: string }) {
       </nav>
 
       <div className="space-y-1 border-t border-border px-5 py-5">
-        <a
-          href="#"
+        <Link
+          href="/api-testing"
           className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-white/70 hover:text-primary"
         >
           <CircleHelp className="h-5 w-5" />
           Help Center
-        </a>
+        </Link>
         <form action={signOutAction}>
           <button className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-700 hover:bg-white/70 hover:text-primary">
             <LogOut className="h-5 w-5" />
@@ -99,14 +102,15 @@ function Topbar() {
       >
         <Menu className="h-5 w-5" />
       </button>
-      <div className="relative w-full max-w-md">
+      <form action="/documents" className="relative w-full max-w-md">
         <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
         <input
           className="h-11 w-full rounded-lg border border-border bg-surface-soft pl-10 pr-4 text-sm outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20"
+          name="q"
           placeholder="Search suppliers, documents..."
           type="search"
         />
-      </div>
+      </form>
 
       <div className="ml-4 flex items-center gap-3">
         <Link
@@ -117,12 +121,15 @@ function Topbar() {
           <Bell className="h-5 w-5" />
           <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-warning ring-2 ring-white" />
         </Link>
-        <button className="hidden items-center gap-2 rounded-full border border-border bg-white py-1 pl-1 pr-3 text-sm font-medium text-slate-800 transition hover:bg-surface-soft sm:flex">
+        <Link
+          className="hidden items-center gap-2 rounded-full border border-border bg-white py-1 pl-1 pr-3 text-sm font-medium text-slate-800 transition hover:bg-surface-soft sm:flex"
+          href="/settings"
+        >
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary">
             CO
           </span>
           Compliance Officer
-        </button>
+        </Link>
       </div>
     </header>
   );

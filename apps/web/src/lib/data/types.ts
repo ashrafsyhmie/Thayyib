@@ -111,7 +111,9 @@ export type InventoryItem = {
   quantity: number;
   unit: string;
   receivedDate: string;
+  receivedDateRaw?: string;
   expiryDate: string;
+  expiryDateRaw?: string;
   halalStatus: DocumentStatus;
   riskLevel: HalalRiskLevel;
   storageLocation: string;
