@@ -108,7 +108,7 @@ export default async function DocumentDetailPage({
           </div>
         </Card>
 
-        <Card className="p-6">
+      <Card className="p-6">
           <div className="flex items-start justify-between gap-4">
             <h2 className="text-xl font-semibold text-slate-950">Metadata</h2>
             <StatusBadge status={document.status} />
@@ -133,7 +133,10 @@ export default async function DocumentDetailPage({
                 Download
               </a>
             ) : (
-              <button className="flex items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-slate-500">
+              <button
+                className="flex items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-slate-500"
+                type="button"
+              >
                 <Eye className="h-4 w-4" />
                 No file attached
               </button>
@@ -152,7 +155,7 @@ export default async function DocumentDetailPage({
         </Card>
       </section>
 
-      <Card className="p-6">
+      <Card className="p-6" id="edit-document">
         <h2 className="text-xl font-semibold text-slate-950">Edit Document</h2>
         <p className="mt-1 text-sm text-slate-600">
           Keep document metadata accurate so audit readiness and reminders are

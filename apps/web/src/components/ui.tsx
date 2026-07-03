@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 type PageHeaderProps = {
   title: string;
@@ -23,13 +23,15 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
 export function Card({
   children,
   className = "",
+  ...props
 }: {
   children: ReactNode;
   className?: string;
-}) {
+} & ComponentPropsWithoutRef<"section">) {
   return (
     <section
       className={`rounded-xl border border-border bg-surface shadow-sm ${className}`}
+      {...props}
     >
       {children}
     </section>
@@ -102,8 +104,8 @@ export function SetupNotice({ show }: { show: boolean }) {
       <p className="font-semibold">Supabase schema setup needed</p>
       <p className="mt-1 leading-6">
         The app is showing demo data. Run `supabase/schema.sql` in the Supabase
-        SQL editor to enable live company, supplier, document, notification, and
-        audit data.
+        SQL editor to enable live company, supplier, document, inventory,
+        notification, and audit data.
       </p>
     </div>
   );

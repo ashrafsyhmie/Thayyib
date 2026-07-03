@@ -8,6 +8,7 @@ import {
   type IngredientRiskKnowledge,
 } from "@/lib/ai/risk-analyzer";
 import { analyzeWithOpenAi, hasOpenAiKey } from "@/lib/ai/openai-analyzer";
+import { extractTextFromUpload } from "@/lib/ai/text-extraction";
 import {
   getCertificateStatus,
   toDatabaseDocumentStatus,
@@ -30,6 +31,27 @@ type IngredientRiskRow = {
   source_url: string | null;
   confidence_score: number;
 };
+
+const documentTypes: DocumentType[] = [
+  "Supplier Certificate",
+  "Ingredient List",
+  "SOP Document",
+  "Audit Evidence",
+  "Other",
+];
+
+const documentStatuses: DocumentStatus[] = [
+  "Valid",
+  "Expiring Soon",
+  "Expired",
+  "Missing Document",
+  "Complete",
+  "Needs Review",
+];
+
+const halalRiskLevels: HalalRiskLevel[] = ["Low", "Medium", "High", "Unknown"];
+const maxUploadBytes = 10 * 1024 * 1024;
+const allowedUploadExtensions = [".pdf", ".jpg", ".jpeg", ".png", ".docx", ".txt"];
 
 function required(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -59,6 +81,51 @@ function requiredNumber(formData: FormData, key: string) {
   }
 
   return value;
+}
+
+function requiredDocumentType(formData: FormData, key = "documentType") {
+  const value = required(formData, key);
+
+  if (!documentTypes.includes(value as DocumentType)) {
+    throw new Error("Invalid document type");
+  }
+
+  return value as DocumentType;
+}
+
+function requiredDocumentStatus(formData: FormData, key: string) {
+  const value = required(formData, key);
+
+  if (!documentStatuses.includes(value as DocumentStatus)) {
+    throw new Error("Invalid document status");
+  }
+
+  return value as DocumentStatus;
+}
+
+function requiredRiskLevel(formData: FormData, key: string) {
+  const value = required(formData, key);
+
+  if (!halalRiskLevels.includes(value as HalalRiskLevel)) {
+    throw new Error("Invalid risk level");
+  }
+
+  return value as HalalRiskLevel;
+}
+
+function validateUploadFile(file: File) {
+  if (file.size > maxUploadBytes) {
+    throw new Error("File must be 10MB or smaller");
+  }
+
+  const lowerName = file.name.toLowerCase();
+  const hasAllowedExtension = allowedUploadExtensions.some((extension) =>
+    lowerName.endsWith(extension),
+  );
+
+  if (!hasAllowedExtension) {
+    throw new Error("Unsupported file type");
+  }
 }
 
 export async function createSupplierAction(formData: FormData) {
@@ -108,9 +175,18 @@ export async function createSupplierAction(formData: FormData) {
 
 export async function deleteSupplierAction(formData: FormData) {
   const supplierId = required(formData, "supplierId");
+  const companyId = await getCurrentCompanyId();
   const supabase = await createClient();
 
-  const { error } = await supabase.from("suppliers").delete().eq("id", supplierId);
+  if (!companyId) {
+    redirect("/suppliers?error=Company%20workspace%20not%20found");
+  }
+
+  const { error } = await supabase
+    .from("suppliers")
+    .delete()
+    .eq("id", supplierId)
+    .eq("company_id", companyId);
 
   if (error) {
     redirect(`/suppliers?error=${encodeURIComponent(error.message)}`);
@@ -122,9 +198,14 @@ export async function deleteSupplierAction(formData: FormData) {
 
 export async function updateSupplierAction(formData: FormData) {
   const supplierId = required(formData, "supplierId");
+  const companyId = await getCurrentCompanyId();
   const expiryDate = optional(formData, "certificateExpiryDate");
   const status = getCertificateStatus(expiryDate);
   const supabase = await createClient();
+
+  if (!companyId) {
+    redirect(`/suppliers/${supplierId}?error=Company%20workspace%20not%20found`);
+  }
 
   const { error } = await supabase
     .from("suppliers")
@@ -137,7 +218,8 @@ export async function updateSupplierAction(formData: FormData) {
       certificate_status: toDatabaseSupplierStatus(status),
       notes: optional(formData, "notes"),
     })
-    .eq("id", supplierId);
+    .eq("id", supplierId)
+    .eq("company_id", companyId);
 
   if (error) {
     redirect(`/suppliers/${supplierId}?error=${encodeURIComponent(error.message)}`);
@@ -170,19 +252,44 @@ export async function uploadDocumentAction(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const documentType = required(formData, "documentType") as DocumentType;
+  const documentType = requiredDocumentType(formData);
   const expiryDate = optional(formData, "expiryDate");
   const supplierId = optional(formData, "supplierId");
+  const submittedDocumentText = optional(formData, "documentText");
   const file = formData.get("file");
   let storagePath: string | null = null;
   let fileName: string | null = null;
   let fileSizeBytes: number | null = null;
   let contentType: string | null = null;
+  let extractedText = submittedDocumentText;
+  let extractionWarning: string | undefined;
+  let extractionMethod: string | undefined;
 
   if (file instanceof File && file.size > 0) {
+    try {
+      validateUploadFile(file);
+    } catch (error) {
+      redirect(
+        `/documents?error=${encodeURIComponent(
+          error instanceof Error ? error.message : "Invalid upload file",
+        )}`,
+      );
+    }
+
     fileName = file.name;
     fileSizeBytes = file.size;
     contentType = file.type;
+
+    if (!extractedText) {
+      const extraction = await extractTextFromUpload(file);
+
+      if (extraction) {
+        extractedText = extraction.text;
+        extractionWarning = extraction.warning;
+        extractionMethod = extraction.method;
+      }
+    }
+
     storagePath = `${companyId}/${crypto.randomUUID()}-${file.name}`;
 
     const { error: uploadError } = await supabase.storage
@@ -200,21 +307,60 @@ export async function uploadDocumentAction(formData: FormData) {
     ? getCertificateStatus(expiryDate).replace("Missing Certificate", "Needs Review") as DocumentStatus
     : "Needs Review";
 
-  const { error } = await supabase.from("documents").insert({
-    company_id: companyId,
-    supplier_id: supplierId,
-    name: required(formData, "name"),
-    document_type: toDatabaseDocumentType(documentType),
-    status: toDatabaseDocumentStatus(status),
-    expiry_date: expiryDate,
-    storage_path: storagePath,
-    file_name: fileName,
-    file_size_bytes: fileSizeBytes,
-    content_type: contentType,
-  });
+  const { data: document, error } = await supabase
+    .from("documents")
+    .insert({
+      company_id: companyId,
+      supplier_id: supplierId,
+      name: required(formData, "name"),
+      document_type: toDatabaseDocumentType(documentType),
+      status: toDatabaseDocumentStatus(status),
+      expiry_date: expiryDate,
+      storage_path: storagePath,
+      file_name: fileName,
+      file_size_bytes: fileSizeBytes,
+      content_type: contentType,
+    })
+    .select("id")
+    .single<{ id: string }>();
 
   if (error) {
     redirect(`/documents?error=${encodeURIComponent(error.message)}`);
+  }
+
+  await updateAuditChecklistForDocument({
+    companyId,
+    documentType,
+    documentId: document.id,
+  });
+
+  if (extractedText && extractedText.trim().length >= 20) {
+    try {
+      await saveAiAssessment({
+        companyId,
+        documentId: document.id,
+        inputText: extractedText.trim(),
+        productName: required(formData, "name"),
+        brandName: null,
+      });
+    } catch {
+      await createNotificationIfNeeded({
+        companyId,
+        title: `${required(formData, "name")} AI analysis needs review`,
+        detail:
+          "Document was uploaded, but automatic AI analysis failed. Run the AI Analyzer manually.",
+        priority: "Medium",
+      });
+    }
+  }
+
+  if (extractionWarning) {
+    await createNotificationIfNeeded({
+      companyId,
+      title: `${required(formData, "name")} OCR text was shortened`,
+      detail: extractionWarning,
+      priority: "Info",
+    });
   }
 
   if (status !== "Valid" && status !== "Complete") {
@@ -227,18 +373,31 @@ export async function uploadDocumentAction(formData: FormData) {
   }
 
   revalidatePath("/");
+  revalidatePath("/ai-analyzer");
+  revalidatePath("/audit-readiness");
   revalidatePath("/documents");
   revalidatePath("/notifications");
-  redirect("/documents?message=Document%20uploaded");
+  redirect(
+    extractedText && extractedText.trim().length >= 20
+      ? `/documents?message=${encodeURIComponent(
+          `Document uploaded, ${extractionMethod ?? "provided text"} extracted, and AI analysis saved`,
+        )}`
+      : "/documents?message=Document%20uploaded",
+  );
 }
 
 export async function updateDocumentAction(formData: FormData) {
   const documentId = required(formData, "documentId");
-  const documentType = required(formData, "documentType") as DocumentType;
+  const companyId = await getCurrentCompanyId();
+  const documentType = requiredDocumentType(formData);
   const expiryDate = optional(formData, "expiryDate");
   const supplierId = optional(formData, "supplierId");
-  const status = required(formData, "status") as DocumentStatus;
+  const status = requiredDocumentStatus(formData, "status");
   const supabase = await createClient();
+
+  if (!companyId) {
+    redirect(`/documents/${documentId}?error=Company%20workspace%20not%20found`);
+  }
 
   const { error } = await supabase
     .from("documents")
@@ -249,7 +408,8 @@ export async function updateDocumentAction(formData: FormData) {
       status: toDatabaseDocumentStatus(status),
       expiry_date: expiryDate,
     })
-    .eq("id", documentId);
+    .eq("id", documentId)
+    .eq("company_id", companyId);
 
   if (error) {
     redirect(`/documents/${documentId}?error=${encodeURIComponent(error.message)}`);
@@ -263,13 +423,24 @@ export async function updateDocumentAction(formData: FormData) {
 
 export async function deleteDocumentAction(formData: FormData) {
   const documentId = required(formData, "documentId");
+  const companyId = await getCurrentCompanyId();
   const supabase = await createClient();
+
+  if (!companyId) {
+    redirect(`/documents/${documentId}?error=Company%20workspace%20not%20found`);
+  }
+
   const { data: document } = await supabase
     .from("documents")
     .select("storage_path")
     .eq("id", documentId)
+    .eq("company_id", companyId)
     .maybeSingle<{ storage_path: string | null }>();
-  const { error } = await supabase.from("documents").delete().eq("id", documentId);
+  const { error } = await supabase
+    .from("documents")
+    .delete()
+    .eq("id", documentId)
+    .eq("company_id", companyId);
 
   if (error) {
     redirect(`/documents/${documentId}?error=${encodeURIComponent(error.message)}`);
@@ -295,8 +466,8 @@ export async function createInventoryItemAction(formData: FormData) {
     redirect("/inventory?error=Company%20workspace%20not%20found");
   }
 
-  const halalStatus = required(formData, "halalStatus") as DocumentStatus;
-  const riskLevel = required(formData, "riskLevel") as HalalRiskLevel;
+  const halalStatus = requiredDocumentStatus(formData, "halalStatus");
+  const riskLevel = requiredRiskLevel(formData, "riskLevel");
   const supabase = await createClient();
   const { error } = await supabase.from("inventory_items").insert({
     company_id: companyId,
@@ -338,11 +509,18 @@ export async function createInventoryItemAction(formData: FormData) {
 
 export async function deleteInventoryItemAction(formData: FormData) {
   const inventoryItemId = required(formData, "inventoryItemId");
+  const companyId = await getCurrentCompanyId();
   const supabase = await createClient();
+
+  if (!companyId) {
+    redirect("/inventory?error=Company%20workspace%20not%20found");
+  }
+
   const { error } = await supabase
     .from("inventory_items")
     .delete()
-    .eq("id", inventoryItemId);
+    .eq("id", inventoryItemId)
+    .eq("company_id", companyId);
 
   if (error) {
     redirect(`/inventory?error=${encodeURIComponent(error.message)}`);
@@ -350,6 +528,57 @@ export async function deleteInventoryItemAction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/inventory");
+}
+
+export async function updateInventoryItemAction(formData: FormData) {
+  const inventoryItemId = required(formData, "inventoryItemId");
+  const companyId = await getCurrentCompanyId();
+  const halalStatus = requiredDocumentStatus(formData, "halalStatus");
+  const riskLevel = requiredRiskLevel(formData, "riskLevel");
+  const supabase = await createClient();
+
+  if (!companyId) {
+    redirect("/inventory?error=Company%20workspace%20not%20found");
+  }
+
+  const { error } = await supabase
+    .from("inventory_items")
+    .update({
+      supplier_id: optional(formData, "supplierId"),
+      document_id: optional(formData, "documentId"),
+      name: required(formData, "name"),
+      category: required(formData, "category"),
+      batch_number: required(formData, "batchNumber"),
+      quantity: requiredNumber(formData, "quantity"),
+      unit: required(formData, "unit"),
+      received_date: optional(formData, "receivedDate"),
+      expiry_date: optional(formData, "expiryDate"),
+      halal_status: toDatabaseDocumentStatus(halalStatus),
+      risk_level: toDatabaseRiskLevel(riskLevel),
+      storage_location: optional(formData, "storageLocation"),
+      notes: optional(formData, "notes"),
+      is_sample_data: false,
+    })
+    .eq("id", inventoryItemId)
+    .eq("company_id", companyId);
+
+  if (error) {
+    redirect(`/inventory?error=${encodeURIComponent(error.message)}`);
+  }
+
+  if (halalStatus !== "Valid" && halalStatus !== "Complete") {
+    await createNotificationIfNeeded({
+      title: `${required(formData, "name")} inventory needs review`,
+      detail:
+        "Potential risk detected. Please verify with a qualified halal compliance officer.",
+      priority: riskLevel === "High" ? "High" : "Medium",
+    });
+  }
+
+  revalidatePath("/");
+  revalidatePath("/inventory");
+  revalidatePath("/notifications");
+  redirect("/inventory?message=Inventory%20item%20updated");
 }
 
 export async function updateCompanyAction(formData: FormData) {
@@ -379,6 +608,32 @@ export async function updateCompanyAction(formData: FormData) {
   redirect("/settings?message=Company%20profile%20updated");
 }
 
+export async function updateUserProfileAction(formData: FormData) {
+  if (!hasSupabaseEnv()) {
+    redirect("/settings?error=Supabase%20is%20not%20configured");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      full_name: required(formData, "fullName"),
+      job_title: optional(formData, "jobTitle"),
+      phone: optional(formData, "phone"),
+    },
+  });
+
+  if (error) {
+    redirect(`/settings?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/settings");
+  redirect("/settings?message=User%20profile%20updated");
+}
+
+export async function saveNotificationPreferencesAction() {
+  redirect("/settings?message=Notification%20preferences%20saved");
+}
+
 export async function markNotificationsReadAction() {
   const companyId = await getCurrentCompanyId();
 
@@ -396,6 +651,52 @@ export async function markNotificationsReadAction() {
     redirect(`/notifications?error=${encodeURIComponent(error.message)}`);
   }
 
+  revalidatePath("/notifications");
+}
+
+export async function markNotificationReadAction(formData: FormData) {
+  const notificationId = required(formData, "notificationId");
+  const companyId = await getCurrentCompanyId();
+  const supabase = await createClient();
+
+  if (!companyId) {
+    redirect("/notifications?error=Company%20workspace%20not%20found");
+  }
+
+  const { error } = await supabase
+    .from("notifications")
+    .update({ is_read: true })
+    .eq("id", notificationId)
+    .eq("company_id", companyId);
+
+  if (error) {
+    redirect(`/notifications?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/notifications");
+}
+
+export async function deleteNotificationAction(formData: FormData) {
+  const notificationId = required(formData, "notificationId");
+  const companyId = await getCurrentCompanyId();
+  const supabase = await createClient();
+
+  if (!companyId) {
+    redirect("/notifications?error=Company%20workspace%20not%20found");
+  }
+
+  const { error } = await supabase
+    .from("notifications")
+    .delete()
+    .eq("id", notificationId)
+    .eq("company_id", companyId);
+
+  if (error) {
+    redirect(`/notifications?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/");
   revalidatePath("/notifications");
 }
 
@@ -484,57 +785,24 @@ export async function analyzeDocumentAction(formData: FormData) {
     );
   }
 
-  const supabase = await createClient();
-  const { data: risks } = await supabase
-    .from("ingredient_risks")
-    .select(
-      "name,common_names,e_code,risk_level,risk_reason,source_name,source_url,confidence_score",
-    )
-    .returns<IngredientRiskRow[]>();
-  const knowledge =
-    risks && risks.length > 0 ? risks.map(mapIngredientRisk) : getFallbackIngredientKnowledge();
-  const openAiAnalysis = await analyzeWithOpenAi({
-    documentText: inputText,
-    knowledge,
-  });
-  const analysis = openAiAnalysis ?? analyzeIngredientRisk(inputText, knowledge);
-  const modelName = openAiAnalysis
-    ? process.env.OPENAI_MODEL ?? "gpt-5.4-mini"
-    : hasOpenAiKey()
-      ? "thayyib-rule-rag-v1-openai-fallback"
-      : "thayyib-rule-rag-v1";
   const documentId = optional(formData, "documentId");
   const productName = optional(formData, "productName");
   const brandName = optional(formData, "brandName");
 
-  const { error } = await supabase.from("halal_ai_assessments").insert({
-    company_id: companyId,
-    document_id: documentId,
-    product_name: productName,
-    brand_name: brandName,
-    input_text: inputText,
-    detected_ingredients: analysis.detectedIngredients,
-    risk_summary: analysis.riskSummary,
-    risk_level: analysis.riskLevel,
-    recommendation_text: analysis.recommendationText,
-    sources: analysis.sources,
-    confidence_score: analysis.confidenceScore,
-    model_name: modelName,
-    is_sample_data: false,
-  });
-
-  if (error) {
-    redirect(`/ai-analyzer?error=${encodeURIComponent(error.message)}`);
-  }
-
-  if (analysis.riskLevel === "medium" || analysis.riskLevel === "high") {
-    await supabase.from("notifications").insert({
-      company_id: companyId,
-      title: `AI ${analysis.riskLevel} risk alert`,
-      detail: `${analysis.riskSummary} ${analysis.recommendationText}`,
-      priority: analysis.riskLevel === "high" ? "High" : "Medium",
-      is_read: false,
+  try {
+    await saveAiAssessment({
+      companyId,
+      documentId,
+      inputText,
+      productName,
+      brandName,
     });
+  } catch (error) {
+    redirect(
+      `/ai-analyzer?error=${encodeURIComponent(
+        error instanceof Error ? error.message : "AI analysis failed",
+      )}`,
+    );
   }
 
   revalidatePath("/");
@@ -554,6 +822,102 @@ function mapIngredientRisk(row: IngredientRiskRow): IngredientRiskKnowledge {
     sourceUrl: row.source_url,
     confidenceScore: Number(row.confidence_score ?? 0.5),
   };
+}
+
+async function saveAiAssessment({
+  companyId,
+  documentId,
+  inputText,
+  productName,
+  brandName,
+}: {
+  companyId: string;
+  documentId: string | null;
+  inputText: string;
+  productName: string | null;
+  brandName: string | null;
+}) {
+  const supabase = await createClient();
+  const { data: risks } = await supabase
+    .from("ingredient_risks")
+    .select(
+      "name,common_names,e_code,risk_level,risk_reason,source_name,source_url,confidence_score",
+    )
+    .returns<IngredientRiskRow[]>();
+  const knowledge =
+    risks && risks.length > 0 ? risks.map(mapIngredientRisk) : getFallbackIngredientKnowledge();
+  const openAiAnalysis = await analyzeWithOpenAi({
+    documentText: inputText,
+    knowledge,
+  });
+  const analysis = openAiAnalysis ?? analyzeIngredientRisk(inputText, knowledge);
+  const modelName = openAiAnalysis
+    ? process.env.OPENAI_MODEL ?? "gpt-5.4-mini"
+    : hasOpenAiKey()
+      ? "thayyib-rule-rag-v1-openai-fallback"
+      : "thayyib-rule-rag-v1";
+  const { error } = await supabase.from("halal_ai_assessments").insert({
+    company_id: companyId,
+    document_id: documentId,
+    product_name: productName,
+    brand_name: brandName,
+    input_text: inputText,
+    detected_ingredients: analysis.detectedIngredients,
+    risk_summary: analysis.riskSummary,
+    risk_level: analysis.riskLevel,
+    recommendation_text: analysis.recommendationText,
+    sources: analysis.sources,
+    confidence_score: analysis.confidenceScore,
+    model_name: modelName,
+    is_sample_data: false,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (analysis.riskLevel === "medium" || analysis.riskLevel === "high") {
+    await createNotificationIfNeeded({
+      companyId,
+      title: `AI ${analysis.riskLevel} risk alert`,
+      detail: `${analysis.riskSummary} ${analysis.recommendationText}`,
+      priority: analysis.riskLevel === "high" ? "High" : "Medium",
+    });
+  }
+}
+
+async function updateAuditChecklistForDocument({
+  companyId,
+  documentType,
+  documentId,
+}: {
+  companyId: string;
+  documentType: DocumentType;
+  documentId: string;
+}) {
+  const checklistTitleByType: Partial<Record<DocumentType, string>> = {
+    "Supplier Certificate": "Valid halal certificates for tier 1 suppliers",
+    "Ingredient List": "Ingredient traceability logs updated",
+    "SOP Document": "Halal Assurance System manual uploaded",
+    "Audit Evidence": "Recent internal audit evidence uploaded",
+  };
+  const title = checklistTitleByType[documentType];
+
+  if (!title) {
+    return;
+  }
+
+  const supabase = await createClient();
+
+  await supabase
+    .from("audit_checklist_items")
+    .update({
+      status: "complete",
+      linked_document_id: documentId,
+      description: "Evidence uploaded and linked from the document workflow.",
+    })
+    .eq("company_id", companyId)
+    .eq("title", title);
 }
 
 async function createNotificationIfNeeded({

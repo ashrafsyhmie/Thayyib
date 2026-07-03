@@ -1,24 +1,19 @@
 import Link from "next/link";
-import { AlertTriangle, Package, Search, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
 import {
-  createInventoryItemAction,
-  deleteInventoryItemAction,
-} from "@/app/actions";
+  AlertTriangle,
+  ClipboardCheck,
+  FileText,
+  Package,
+  ShieldCheck,
+} from "lucide-react";
+import { createInventoryItemAction } from "@/app/actions";
 import { AppShell } from "@/components/app-shell";
 import { Card, PageHeader, SetupNotice, StatusBadge } from "@/components/ui";
+import { InventoryClient } from "@/app/inventory/inventory-client";
 import { getAppData } from "@/lib/data/app-data";
 import type { InventoryItem } from "@/lib/data/types";
 
-const halalStatuses = [
-  "All",
-  "Valid",
-  "Complete",
-  "Expiring Soon",
-  "Expired",
-  "Missing Document",
-  "Needs Review",
-];
-const riskLevels = ["All", "Low", "Medium", "High", "Unknown"];
 const statusOptions = [
   "Valid",
   "Complete",
@@ -34,30 +29,41 @@ type InventoryPageProps = {
   searchParams: Promise<{
     error?: string;
     message?: string;
-    q?: string;
-    status?: string;
-    risk?: string;
   }>;
 };
 
 export default async function InventoryPage({ searchParams }: InventoryPageProps) {
   const [appData, params] = await Promise.all([getAppData(), searchParams]);
-  const inventoryItems = filterInventoryItems(appData.inventoryItems, params);
   const highRiskCount = appData.inventoryItems.filter(
     (item) => item.riskLevel === "High",
   ).length;
-  const reviewCount = appData.inventoryItems.filter((item) =>
-    ["Expired", "Missing Document", "Needs Review"].includes(item.halalStatus),
-  ).length;
+  const reviewItems = appData.inventoryItems.filter(isReviewNeeded);
+  const reviewCount = reviewItems.length;
   const expiringCount = appData.inventoryItems.filter(
     (item) => item.halalStatus === "Expiring Soon",
   ).length;
+  const evidenceLinkedCount = appData.inventoryItems.filter(
+    (item) => item.documentId,
+  ).length;
+  const evidenceCoverage =
+    appData.inventoryItems.length === 0
+      ? 0
+      : Math.round((evidenceLinkedCount / appData.inventoryItems.length) * 100);
 
   return (
     <AppShell activePath="/inventory">
       <PageHeader
         title="Ingredient Inventory"
         description="Track raw materials, batches, supplier evidence, and halal risk status."
+        action={
+          <Link
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-surface-soft"
+            href="/documents"
+          >
+            <FileText className="h-4 w-4" />
+            View Evidence
+          </Link>
+        }
       />
       <SetupNotice show={appData.setupMode} />
       <Feedback error={params.error} message={params.message} />
@@ -67,25 +73,104 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
           title="Total Ingredients"
           value={String(appData.inventoryItems.length)}
           detail="Raw materials tracked"
+          icon={<Package className="h-5 w-5" />}
         />
         <MetricCard
           title="High Risk"
           value={String(highRiskCount)}
           detail="Require human review"
+          icon={<AlertTriangle className="h-5 w-5" />}
+          tone="danger"
           warning={highRiskCount > 0}
         />
         <MetricCard
           title="Needs Evidence"
           value={String(reviewCount)}
           detail="Expired, missing, or under review"
+          icon={<ClipboardCheck className="h-5 w-5" />}
+          tone="warning"
           warning={reviewCount > 0}
         />
         <MetricCard
-          title="Expiring Soon"
-          value={String(expiringCount)}
-          detail="Within the tracked status window"
+          title="Evidence Coverage"
+          value={`${evidenceCoverage}%`}
+          detail={`${evidenceLinkedCount} linked, ${expiringCount} expiring soon`}
+          icon={<ShieldCheck className="h-5 w-5" />}
           warning={expiringCount > 0}
         />
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_420px]">
+        <Card className="p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Compliance review queue
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-slate-950">
+                Priority batches for halal verification
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                Inventory flags are audit-preparation assistance only.
+                Potential risk detected. Please verify with a qualified halal
+                compliance officer.
+              </p>
+            </div>
+            <StatusBadge status={reviewCount > 0 ? "Needs Review" : "Ready"} />
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            {(reviewItems.length > 0 ? reviewItems.slice(0, 3) : appData.inventoryItems.slice(0, 3)).map(
+              (item) => (
+                <div
+                  className="rounded-lg border border-border bg-surface-soft/60 p-4"
+                  key={item.id}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-slate-950">{item.name}</p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Batch {item.batchNumber}
+                      </p>
+                    </div>
+                    <StatusBadge status={item.riskLevel} />
+                  </div>
+                  <p className="mt-3 text-sm text-slate-600">
+                    {item.linkedDocument !== "No document linked"
+                      ? item.linkedDocument
+                      : "No evidence document linked yet"}
+                  </p>
+                </div>
+              ),
+            )}
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Evidence coverage
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-slate-950">
+                {evidenceCoverage}% linked
+              </h2>
+            </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-soft text-primary">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+          </div>
+          <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${evidenceCoverage}%` }}
+            />
+          </div>
+          <p className="mt-4 text-sm leading-6 text-slate-600">
+            Link each ingredient batch to supplier certificates, ingredient
+            lists, or audit evidence before relying on it in audit readiness.
+          </p>
+        </Card>
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-[380px_1fr]">
@@ -173,200 +258,62 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
           </form>
         </Card>
 
-        <div className="space-y-4">
-          <Card className="p-4">
-            <form className="grid gap-3 lg:grid-cols-[1fr_180px_160px_auto]">
-              <label className="relative block">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-                <input
-                  className="h-11 w-full rounded-lg border border-border bg-white pl-10 pr-4 text-sm outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  defaultValue={params.q ?? ""}
-                  name="q"
-                  placeholder="Search ingredient, batch, supplier..."
-                />
-              </label>
-              <select
-                className="h-11 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                defaultValue={params.status ?? "All"}
-                name="status"
-              >
-                {halalStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="h-11 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                defaultValue={params.risk ?? "All"}
-                name="risk"
-              >
-                {riskLevels.map((risk) => (
-                  <option key={risk} value={risk}>
-                    {risk}
-                  </option>
-                ))}
-              </select>
-              <button className="rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-surface-soft">
-                Filter
-              </button>
-            </form>
-          </Card>
-
-          <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1100px] text-left">
-                <thead className="border-b border-border bg-surface-soft/60">
-                  <tr>
-                    {[
-                      "Ingredient",
-                      "Batch",
-                      "Supplier",
-                      "Quantity",
-                      "Expiry",
-                      "Halal Status",
-                      "Risk",
-                      "Evidence",
-                      "Actions",
-                    ].map((heading) => (
-                      <th
-                        className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500"
-                        key={heading}
-                      >
-                        {heading}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {inventoryItems.map((item) => (
-                    <tr className="transition hover:bg-surface-soft/70" key={item.id}>
-                      <td className="px-6 py-5">
-                        <p className="font-semibold text-slate-950">{item.name}</p>
-                        <p className="mt-1 text-sm text-slate-600">
-                          {item.category} - {item.storageLocation}
-                        </p>
-                      </td>
-                      <td className="px-6 py-5 text-sm text-slate-600">
-                        <p className="font-medium text-slate-900">
-                          {item.batchNumber}
-                        </p>
-                        <p className="mt-1">Received {item.receivedDate}</p>
-                      </td>
-                      <td className="px-6 py-5 text-sm text-slate-600">
-                        {item.supplierId ? (
-                          <Link
-                            className="font-medium text-primary hover:text-primary-dark"
-                            href={`/suppliers/${item.supplierId}`}
-                          >
-                            {item.supplier}
-                          </Link>
-                        ) : (
-                          item.supplier
-                        )}
-                      </td>
-                      <td className="px-6 py-5 text-sm font-medium text-slate-900">
-                        {item.quantity} {item.unit}
-                      </td>
-                      <td className="px-6 py-5 text-sm text-slate-600">
-                        {item.expiryDate}
-                      </td>
-                      <td className="px-6 py-5">
-                        <StatusBadge status={item.halalStatus} />
-                      </td>
-                      <td className="px-6 py-5">
-                        <StatusBadge status={item.riskLevel} />
-                      </td>
-                      <td className="px-6 py-5 text-sm text-slate-600">
-                        {item.documentId ? (
-                          <Link
-                            className="font-medium text-primary hover:text-primary-dark"
-                            href={`/documents/${item.documentId}`}
-                          >
-                            {item.linkedDocument}
-                          </Link>
-                        ) : (
-                          item.linkedDocument
-                        )}
-                      </td>
-                      <td className="px-6 py-5">
-                        <form action={deleteInventoryItemAction}>
-                          <input
-                            name="inventoryItemId"
-                            type="hidden"
-                            value={item.id}
-                          />
-                          <button
-                            aria-label={`Delete ${item.name}`}
-                            className="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-danger"
-                            disabled={appData.setupMode}
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
-                        </form>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex items-center justify-between border-t border-border px-6 py-4 text-sm text-slate-600">
-              <span>Showing {inventoryItems.length} inventory items</span>
-              <span>All statuses are assistance for audit preparation</span>
-            </div>
-          </Card>
-        </div>
+        <InventoryClient
+          documents={appData.documents}
+          inventoryItems={appData.inventoryItems}
+          setupMode={appData.setupMode}
+          suppliers={appData.suppliers}
+        />
       </section>
     </AppShell>
   );
 }
 
-function filterInventoryItems(
-  items: InventoryItem[],
-  params: Awaited<InventoryPageProps["searchParams"]>,
-) {
-  const query = params.q?.trim().toLowerCase();
-  const status = params.status ?? "All";
-  const risk = params.risk ?? "All";
-
-  return items.filter((item) => {
-    const matchesQuery =
-      !query ||
-      [item.name, item.batchNumber, item.category, item.supplier]
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
-    const matchesStatus = status === "All" || item.halalStatus === status;
-    const matchesRisk = risk === "All" || item.riskLevel === risk;
-
-    return matchesQuery && matchesStatus && matchesRisk;
-  });
+function isReviewNeeded(item: InventoryItem) {
+  return (
+    item.riskLevel === "High" ||
+    ["Expired", "Missing Document", "Needs Review"].includes(item.halalStatus) ||
+    !item.documentId
+  );
 }
 
 function MetricCard({
   title,
   value,
   detail,
+  icon,
+  tone = "info",
   warning = false,
 }: {
   title: string;
   value: string;
   detail: string;
+  icon: ReactNode;
+  tone?: "info" | "warning" | "danger";
   warning?: boolean;
 }) {
+  const toneStyles = {
+    info: "bg-primary-soft text-primary",
+    warning: "bg-amber-50 text-warning",
+    danger: "bg-red-50 text-danger",
+  };
+
   return (
     <Card className="flex min-h-36 flex-col justify-between p-5">
       <div className="flex items-start justify-between gap-4">
         <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
           {title}
         </h2>
-        {warning && <AlertTriangle className="h-5 w-5 text-warning" />}
+        <div className={`rounded-lg p-2 ${toneStyles[tone]}`}>{icon}</div>
       </div>
       <div>
-        <p className="text-3xl font-bold tracking-tight text-slate-950">
-          {value}
-        </p>
-        <p className="mt-2 text-sm text-slate-600">{detail}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-3xl font-bold tracking-tight text-slate-950">
+            {value}
+          </p>
+          {warning && <AlertTriangle className="h-5 w-5 text-warning" />}
+        </div>
+        <p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p>
       </div>
     </Card>
   );

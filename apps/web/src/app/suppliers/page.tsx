@@ -1,11 +1,8 @@
-import Link from "next/link";
-import { Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { Card, PageHeader, SetupNotice, StatusBadge } from "@/components/ui";
-import { createSupplierAction, deleteSupplierAction } from "@/app/actions";
+import { Card, PageHeader, SetupNotice } from "@/components/ui";
+import { createSupplierAction } from "@/app/actions";
 import { getAppData } from "@/lib/data/app-data";
-
-const filters = ["All", "Valid", "Expiring Soon", "Expired", "Missing Certificate"];
+import { SuppliersClient } from "@/app/suppliers/suppliers-client";
 
 type SuppliersPageProps = {
   searchParams: Promise<{
@@ -71,102 +68,7 @@ export default async function SuppliersPage({ searchParams }: SuppliersPageProps
           </form>
         </Card>
 
-        <div className="space-y-4">
-          <Card className="p-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="mr-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Filter by status
-              </span>
-              {filters.map((filter) => (
-                <button
-                  className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
-                    filter === "All"
-                      ? "border-border bg-white text-slate-700"
-                      : "border-primary/15 bg-primary-soft/60 text-primary hover:bg-primary-soft"
-                  }`}
-                  key={filter}
-                >
-                  {filter}
-                </button>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-left">
-                <thead className="border-b border-border bg-surface-soft/60">
-                  <tr>
-                    {[
-                      "Supplier Name",
-                      "Category",
-                      "Halal Status",
-                      "Expiry Date",
-                      "Contact Person",
-                      "Documents",
-                      "Actions",
-                    ].map((heading) => (
-                      <th
-                        className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500"
-                        key={heading}
-                      >
-                        {heading}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {suppliers.map((supplier) => (
-                    <tr
-                      className="group transition hover:bg-surface-soft/70"
-                      key={supplier.id}
-                    >
-                      <td className="px-6 py-5 font-semibold text-slate-950">
-                        <Link
-                          className="text-slate-950 hover:text-primary"
-                          href={`/suppliers/${supplier.id}`}
-                        >
-                          {supplier.name}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-5 text-sm text-slate-600">
-                        {supplier.category}
-                      </td>
-                      <td className="px-6 py-5">
-                        <StatusBadge status={supplier.status} />
-                      </td>
-                      <td className="px-6 py-5 text-sm text-slate-600">
-                        {supplier.expiryDate}
-                      </td>
-                      <td className="px-6 py-5 text-sm text-slate-600">
-                        {supplier.contact}
-                      </td>
-                      <td className="px-6 py-5 text-sm text-slate-600">
-                        {supplier.documents}
-                      </td>
-                      <td className="px-6 py-5">
-                        <form action={deleteSupplierAction}>
-                          <input name="supplierId" type="hidden" value={supplier.id} />
-                          <button
-                            aria-label={`Delete ${supplier.name}`}
-                            className="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-danger"
-                            disabled={setupMode}
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
-                        </form>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex items-center justify-between border-t border-border px-6 py-4 text-sm text-slate-600">
-              <span>Showing {suppliers.length} suppliers</span>
-              <span>Certificate status updates from expiry dates</span>
-            </div>
-          </Card>
-        </div>
+        <SuppliersClient suppliers={suppliers} setupMode={setupMode} />
       </section>
     </AppShell>
   );

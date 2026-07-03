@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { FileUp, Upload } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { Card, PageHeader, SetupNotice, StatusBadge } from "@/components/ui";
+import { Card, PageHeader, SetupNotice } from "@/components/ui";
 import { uploadDocumentAction } from "@/app/actions";
+import { DocumentsClient } from "@/app/documents/documents-client";
 import { getAppData } from "@/lib/data/app-data";
 import type { DocumentType } from "@/lib/data/types";
 
@@ -19,6 +19,7 @@ type DocumentsPageProps = {
     error?: string;
     message?: string;
     supplierId?: string;
+    q?: string;
   }>;
 };
 
@@ -94,11 +95,26 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
                 File
               </span>
               <input
-                accept=".pdf,.jpg,.jpeg,.png,.docx"
+                accept=".pdf,.jpg,.jpeg,.png,.docx,.txt"
                 className="mt-2 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary-soft file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary"
                 name="file"
                 type="file"
               />
+            </label>
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-900">
+                Optional Text Override for AI Analysis
+              </span>
+              <textarea
+                className="mt-2 min-h-32 w-full rounded-lg border border-border px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                name="documentText"
+                placeholder="Paste ingredient text here if you want to override automatic extraction."
+              />
+              <span className="mt-2 block text-xs leading-5 text-slate-500">
+                If left blank, Thayyib will try to extract text from TXT, text
+                PDFs, DOCX files, JPG/PNG images, and the first pages of scanned
+                PDFs before running AI analysis.
+              </span>
             </label>
             <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark">
               <Upload className="h-4 w-4" />
@@ -107,63 +123,11 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
           </form>
         </Card>
 
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left">
-              <thead className="border-b border-border bg-surface-soft/60">
-                <tr>
-                  {[
-                    "Document Name",
-                    "Type",
-                    "Linked Supplier",
-                    "Uploaded",
-                    "Expiry",
-                    "Status",
-                  ].map((heading) => (
-                    <th
-                      className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500"
-                      key={heading}
-                    >
-                      {heading}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {documents.map((document) => (
-                  <tr className="transition hover:bg-surface-soft/70" key={document.id}>
-                    <td className="px-6 py-5 font-semibold text-slate-950">
-                      <Link
-                        className="text-slate-950 hover:text-primary"
-                        href={`/documents/${document.id}`}
-                      >
-                        {document.name}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-5 text-sm text-slate-600">
-                      {document.type}
-                    </td>
-                    <td className="px-6 py-5 text-sm text-slate-600">
-                      {document.supplier}
-                    </td>
-                    <td className="px-6 py-5 text-sm text-slate-600">
-                      {document.uploadedAt}
-                    </td>
-                    <td className="px-6 py-5 text-sm text-slate-600">
-                      {document.expiryDate}
-                    </td>
-                    <td className="px-6 py-5">
-                      <StatusBadge status={document.status} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="border-t border-border px-6 py-4 text-sm text-slate-600">
-            Showing {documents.length} documents
-          </div>
-        </Card>
+        <DocumentsClient
+          documents={documents}
+          initialQuery={params.q ?? ""}
+          setupMode={setupMode}
+        />
       </section>
     </AppShell>
   );
