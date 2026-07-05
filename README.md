@@ -1,18 +1,62 @@
 # Thayyib
 
-Thayyib is an AI-assisted halal compliance intelligence platform for food
-manufacturers. It helps teams track suppliers, documents, certificate expiry,
-audit readiness, reminders, and ingredient/document risk signals.
+**Group:** Low Battery
 
-Important: Thayyib is decision support software. It should flag possible issues
-with language such as "Potential risk detected. Please verify with a qualified
-halal compliance officer." It must not claim that an item is finally halal or
-non-halal.
+**Live Demo:** https://thayyib.vercel.app/
+
+Thayyib is an AI-assisted halal compliance intelligence platform for food
+manufacturers. It helps halal operations teams move away from scattered Excel
+files, email threads, paper certificates, and manual reminders by putting
+supplier compliance, documents, expiry tracking, audit readiness, and AI risk
+signals in one workspace.
+
+Thayyib is built as a serious FYP-to-startup MVP for food manufacturers,
+especially SMEs preparing for halal audits.
+
+## Demo Access
+
+Open the live app:
+
+```text
+https://thayyib.vercel.app/
+```
+
+Demo account:
+
+```text
+Email: thayyib.demo.2026@gmail.com
+Password: ThayyibDemo123!
+```
+
+If the demo account is unavailable, create a new account from `/register`.
+Thayyib creates a company workspace for each new user.
+
+## What It Does
+
+- Tracks suppliers, documents, certificate expiry, reminders, and audit tasks.
+- Shows audit readiness and compliance visibility in a dashboard.
+- Supports document upload and metadata management.
+- Uses OCR and AI-assisted analysis to highlight possible ingredient or document
+  risks.
+- Keeps AI findings auditable with confidence, sources, and recommended next
+  actions.
+
+## AI Safety
+
+Thayyib is decision support software. It should flag possible issues with
+language such as:
+
+```text
+Potential risk detected. Please verify with a qualified halal compliance officer.
+```
+
+It must not claim that an item is finally halal or non-halal, and it must not
+replace human halal compliance officers.
 
 ## Hackathon Quick Start
 
-Use this path if you are a judge, teammate, or reviewer who wants to run the
-demo quickly.
+Use this path if you are a judge, teammate, or reviewer who wants to run the app
+locally.
 
 ### 1. Install prerequisites
 
@@ -69,15 +113,7 @@ http://localhost:3000
 
 ### 5. Log in
 
-Default demo account:
-
-```text
-Email: thayyib.demo.2026@gmail.com
-Password: ThayyibDemo123!
-```
-
-If the shared demo user is not available, create your own account from
-`/register`. The database trigger creates a company workspace for new users.
+Use the demo account shown in the Demo Access section, or register a new user.
 
 ## Full Supabase Setup
 
@@ -115,7 +151,7 @@ Never expose `OPENAI_API_KEY` as a `NEXT_PUBLIC_` value and never commit it.
 AI output must be treated as an auditable assistant finding with confidence,
 sources, and human verification.
 
-## Main Features
+## MVP Features
 
 - Supabase authentication
 - Company workspace foundation
@@ -126,6 +162,17 @@ sources, and human verification.
 - Notifications
 - OCR and AI-assisted risk analysis foundations
 - Demo data for halal compliance workflows
+
+## Tech Stack
+
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Supabase Auth
+- Supabase PostgreSQL
+- Supabase Storage
+- OpenAI-compatible AI analyzer support
+- Tesseract/OCR document text extraction foundations
 
 ## Useful Commands
 
