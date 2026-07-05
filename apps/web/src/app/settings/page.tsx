@@ -7,11 +7,12 @@ type SettingsPageProps = {
   searchParams: Promise<{
     error?: string;
     message?: string;
+    tab?: string;
   }>;
 };
 
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
-  const [{ company, setupMode }, params] = await Promise.all([
+  const [{ company, setupMode, userProfile }, params] = await Promise.all([
     getAppData(),
     searchParams,
   ]);
@@ -25,7 +26,12 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       <SetupNotice show={setupMode} />
       <Feedback error={params.error} message={params.message} />
 
-      <SettingsClient company={company} setupMode={setupMode} />
+      <SettingsClient
+        company={company}
+        initialTab={params.tab}
+        setupMode={setupMode}
+        userProfile={userProfile}
+      />
     </AppShell>
   );
 }

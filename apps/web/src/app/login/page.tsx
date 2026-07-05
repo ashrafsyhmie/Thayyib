@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
-import { signInAction, signInWithGoogleAction } from "@/app/auth/actions";
+import { signInAction } from "@/app/auth/actions";
+import { PasswordInput } from "@/components/password-input";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -52,24 +53,19 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             />
           </label>
 
-          <label className="block">
-            <span className="flex items-center justify-between gap-4 text-sm font-semibold text-slate-900">
-              Password
+          <PasswordInput
+            action={
               <Link
                 className="text-primary hover:text-primary-dark"
                 href="/forgot-password"
               >
                 Forgot password?
               </Link>
-            </span>
-            <input
-              className="mt-2 h-12 w-full rounded-lg border border-border px-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
-              name="password"
-              placeholder="Password"
-              required
-              type="password"
-            />
-          </label>
+            }
+            label="Password"
+            name="password"
+            placeholder="Password"
+          />
 
           <label className="flex items-center gap-3 text-sm text-slate-600">
             <input className="h-4 w-4 rounded border-border accent-primary" type="checkbox" />
@@ -81,27 +77,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             type="submit"
           >
             Login
-          </button>
-        </form>
-
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-            Or
-          </span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <form action={signInWithGoogleAction}>
-          <input name="redirectTo" type="hidden" value={params.redirectTo ?? "/"} />
-          <button
-            className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-border bg-white text-sm font-semibold text-slate-800 transition hover:bg-surface-soft"
-            type="submit"
-          >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-xs font-bold text-primary">
-              G
-            </span>
-            Continue with Google
           </button>
         </form>
 

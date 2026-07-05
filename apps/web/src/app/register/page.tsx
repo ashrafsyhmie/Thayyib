@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
-import { signInWithGoogleAction, signUpAction } from "@/app/auth/actions";
+import { signUpAction } from "@/app/auth/actions";
+import { PasswordInput } from "@/components/password-input";
 
 type RegisterPageProps = {
   searchParams: Promise<{
@@ -53,17 +54,15 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
           />
 
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field
+            <PasswordInput
               label="Password"
               name="password"
               placeholder="Password"
-              type="password"
             />
-            <Field
+            <PasswordInput
               label="Confirm Password"
               name="confirmPassword"
               placeholder="Confirm password"
-              type="password"
             />
           </div>
 
@@ -72,27 +71,6 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
             type="submit"
           >
             Create Account
-          </button>
-        </form>
-
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-            Or
-          </span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <form action={signInWithGoogleAction}>
-          <input name="redirectTo" type="hidden" value={params.redirectTo ?? "/"} />
-          <button
-            className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-border bg-white text-sm font-semibold text-slate-800 transition hover:bg-surface-soft"
-            type="submit"
-          >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-xs font-bold text-primary">
-              G
-            </span>
-            Continue with Google
           </button>
         </form>
 

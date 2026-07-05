@@ -334,7 +334,7 @@ async function seedChecklist(supabaseClient, companyId, documentsByName) {
     {
       category: "Supplier Certificates",
       title: "Annual facility audit reports collected",
-      description: "Missing 1 document from Prime Ingredients.",
+      description: "No current Audit Evidence document is linked.",
       status: "missing_document",
       linked_document_id: null,
       sort_order: 6,

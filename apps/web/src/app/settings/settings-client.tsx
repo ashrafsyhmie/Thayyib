@@ -16,7 +16,7 @@ import {
   updateUserProfileAction,
 } from "@/app/actions";
 import { Card, PrimaryButton } from "@/components/ui";
-import type { Company } from "@/lib/data/types";
+import type { Company, UserProfile } from "@/lib/data/types";
 
 const tabs = [
   { label: "Company Profile", icon: Building2 },
@@ -28,12 +28,20 @@ const tabs = [
 
 export function SettingsClient({
   company,
+  initialTab,
   setupMode,
+  userProfile,
 }: {
   company: Company;
+  initialTab?: string;
   setupMode: boolean;
+  userProfile: UserProfile;
 }) {
-  const [activeTab, setActiveTab] = useState(tabs[0].label);
+  const initialActiveTab =
+    initialTab && tabs.some((tab) => tab.label === initialTab)
+      ? initialTab
+      : tabs[0].label;
+  const [activeTab, setActiveTab] = useState(initialActiveTab);
   const [logoName, setLogoName] = useState("");
   const [inviteMessage, setInviteMessage] = useState("");
 
@@ -67,7 +75,9 @@ export function SettingsClient({
           setupMode={setupMode}
         />
       )}
-      {activeTab === "User Profile" && <UserPanel setupMode={setupMode} />}
+      {activeTab === "User Profile" && (
+        <UserPanel setupMode={setupMode} userProfile={userProfile} />
+      )}
       {activeTab === "Team Members" && (
         <TeamPanel
           inviteMessage={inviteMessage}
@@ -159,7 +169,13 @@ function CompanyPanel({
   );
 }
 
-function UserPanel({ setupMode }: { setupMode: boolean }) {
+function UserPanel({
+  setupMode,
+  userProfile,
+}: {
+  setupMode: boolean;
+  userProfile: UserProfile;
+}) {
   return (
     <Card className="overflow-hidden">
       <form action={updateUserProfileAction}>
@@ -172,9 +188,14 @@ function UserPanel({ setupMode }: { setupMode: boolean }) {
           </PrimaryButton>
         </PanelHeader>
         <div className="grid gap-5 p-6 md:grid-cols-2">
-          <Field label="Full Name" name="fullName" value="Compliance Officer" />
-          <Field label="Job Title" name="jobTitle" value="Halal Compliance Officer" />
-          <Field label="Phone" name="phone" required={false} value="" />
+          <Field label="Full Name" name="fullName" value={userProfile.fullName} />
+          <Field label="Job Title" name="jobTitle" value={userProfile.jobTitle} />
+          <Field
+            label="Phone"
+            name="phone"
+            required={false}
+            value={userProfile.phone}
+          />
         </div>
       </form>
     </Card>

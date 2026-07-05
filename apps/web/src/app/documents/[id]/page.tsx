@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Download, Eye, FileText, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Eye, FileText, FileUp, Trash2 } from "lucide-react";
 import { deleteDocumentAction, updateDocumentAction } from "@/app/actions";
 import { AppShell } from "@/components/app-shell";
 import { Card, PageHeader, SecondaryButton, SetupNotice, StatusBadge } from "@/components/ui";
@@ -161,7 +161,11 @@ export default async function DocumentDetailPage({
           Keep document metadata accurate so audit readiness and reminders are
           based on current evidence.
         </p>
-        <form action={updateDocumentAction} className="mt-5 grid gap-4 md:grid-cols-2">
+        <form
+          action={updateDocumentAction}
+          className="mt-5 grid gap-4 md:grid-cols-2"
+          encType="multipart/form-data"
+        >
           <input name="documentId" type="hidden" value={document.id} />
           <Field label="Document Name" name="name" value={document.name} />
           <label className="block">
@@ -214,6 +218,37 @@ export default async function DocumentDetailPage({
               ))}
             </select>
           </label>
+          <label className="block md:col-span-2">
+            <span className="text-sm font-semibold text-slate-900">
+              Add or Replace Evidence File
+            </span>
+            <input
+              accept=".pdf,.jpg,.jpeg,.png,.docx,.txt"
+              className="mt-2 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary-soft file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary"
+              name="file"
+              type="file"
+            />
+            <span className="mt-2 flex items-center gap-2 text-xs leading-5 text-slate-500">
+              <FileUp className="h-3.5 w-3.5" />
+              Upload a new file to add evidence or replace the current file.
+            </span>
+          </label>
+          {document.storagePath && (
+            <label className="flex items-start gap-3 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-danger md:col-span-2">
+              <input
+                className="mt-1 h-4 w-4 rounded border-red-200 accent-danger"
+                name="removeFile"
+                type="checkbox"
+              />
+              <span>
+                <span className="block font-semibold">Remove current file</span>
+                <span className="mt-1 block leading-5">
+                  This keeps the document record but marks its audit evidence as
+                  needing review unless you upload a replacement file.
+                </span>
+              </span>
+            </label>
+          )}
           <button
             className="rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-slate-300 md:col-span-2"
             disabled={appData.setupMode}

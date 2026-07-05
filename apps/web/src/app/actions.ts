@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   analyzeIngredientRisk,
   getFallbackIngredientKnowledge,
+  mergeIngredientKnowledge,
   type IngredientRiskKnowledge,
 } from "@/lib/ai/risk-analyzer";
 import { analyzeWithOpenAi, hasOpenAiKey } from "@/lib/ai/openai-analyzer";
@@ -30,6 +31,13 @@ type IngredientRiskRow = {
   source_name: string;
   source_url: string | null;
   confidence_score: number;
+};
+
+type AuditDocumentRow = {
+  id: string;
+  document_type: string;
+  status: string;
+  created_at: string;
 };
 
 const documentTypes: DocumentType[] = [
@@ -333,6 +341,7 @@ export async function uploadDocumentAction(formData: FormData) {
     documentType,
     documentId: document.id,
   });
+  await refreshAuditReadinessForCompany(companyId);
 
   if (extractedText && extractedText.trim().length >= 20) {
     try {
@@ -392,12 +401,69 @@ export async function updateDocumentAction(formData: FormData) {
   const documentType = requiredDocumentType(formData);
   const expiryDate = optional(formData, "expiryDate");
   const supplierId = optional(formData, "supplierId");
-  const status = requiredDocumentStatus(formData, "status");
+  const submittedStatus = requiredDocumentStatus(formData, "status");
+  const removeFile = optional(formData, "removeFile") === "on";
+  const file = formData.get("file");
+  const uploadedFile = file instanceof File && file.size > 0 ? file : null;
   const supabase = await createClient();
+  let replacementStoragePath: string | null = null;
 
   if (!companyId) {
     redirect(`/documents/${documentId}?error=Company%20workspace%20not%20found`);
   }
+
+  const { data: existingDocument } = await supabase
+    .from("documents")
+    .select("storage_path")
+    .eq("id", documentId)
+    .eq("company_id", companyId)
+    .maybeSingle<{ storage_path: string | null }>();
+
+  if (!existingDocument) {
+    redirect(`/documents/${documentId}?error=Document%20not%20found`);
+  }
+
+  if (uploadedFile) {
+    try {
+      validateUploadFile(uploadedFile);
+    } catch (error) {
+      redirect(
+        `/documents/${documentId}?error=${encodeURIComponent(
+          error instanceof Error ? error.message : "Invalid upload file",
+        )}`,
+      );
+    }
+
+    replacementStoragePath = `${companyId}/${crypto.randomUUID()}-${uploadedFile.name}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("documents")
+      .upload(replacementStoragePath, uploadedFile, {
+        contentType: uploadedFile.type,
+      });
+
+    if (uploadError) {
+      redirect(`/documents/${documentId}?error=${encodeURIComponent(uploadError.message)}`);
+    }
+  }
+
+  const status = removeFile && !uploadedFile ? "Needs Review" : submittedStatus;
+  const fileUpdate =
+    uploadedFile && replacementStoragePath
+      ? {
+          storage_path: replacementStoragePath,
+          file_name: uploadedFile.name,
+          file_size_bytes: uploadedFile.size,
+          content_type: uploadedFile.type,
+        }
+      : removeFile
+        ? {
+            storage_path: null,
+            file_name: null,
+            file_size_bytes: null,
+            content_type: null,
+          }
+        : {};
 
   const { error } = await supabase
     .from("documents")
@@ -407,15 +473,35 @@ export async function updateDocumentAction(formData: FormData) {
       document_type: toDatabaseDocumentType(documentType),
       status: toDatabaseDocumentStatus(status),
       expiry_date: expiryDate,
+      ...fileUpdate,
     })
     .eq("id", documentId)
     .eq("company_id", companyId);
 
   if (error) {
+    if (replacementStoragePath) {
+      await supabase.storage.from("documents").remove([replacementStoragePath]);
+    }
+
     redirect(`/documents/${documentId}?error=${encodeURIComponent(error.message)}`);
   }
 
+  if ((uploadedFile || removeFile) && existingDocument?.storage_path) {
+    await supabase.storage.from("documents").remove([existingDocument.storage_path]);
+  }
+
+  await syncAuditChecklistForDocument({
+    companyId,
+    documentType,
+    documentId,
+    status,
+    removedEvidence: removeFile && !uploadedFile,
+  });
+  await refreshAuditReadinessForCompany(companyId);
+
   revalidatePath("/");
+  revalidatePath("/audit-readiness");
+  revalidatePath("/audit-readiness/summary");
   revalidatePath("/documents");
   revalidatePath(`/documents/${documentId}`);
   redirect(`/documents/${documentId}?message=Document%20updated`);
@@ -436,6 +522,12 @@ export async function deleteDocumentAction(formData: FormData) {
     .eq("id", documentId)
     .eq("company_id", companyId)
     .maybeSingle<{ storage_path: string | null }>();
+
+  await markAuditChecklistNeedsReviewForDeletedDocument({
+    companyId,
+    documentId,
+  });
+
   const { error } = await supabase
     .from("documents")
     .delete()
@@ -450,9 +542,16 @@ export async function deleteDocumentAction(formData: FormData) {
     await supabase.storage.from("documents").remove([document.storage_path]);
   }
 
+  await refreshAuditReadinessForCompany(companyId);
+
   revalidatePath("/");
+  revalidatePath("/audit-readiness");
+  revalidatePath("/audit-readiness/summary");
   revalidatePath("/documents");
-  redirect("/documents?message=Document%20deleted");
+  revalidatePath("/notifications");
+  redirect(
+    "/documents?message=Document%20deleted%20and%20audit%20readiness%20updated",
+  );
 }
 
 export async function createInventoryItemAction(formData: FormData) {
@@ -627,7 +726,7 @@ export async function updateUserProfileAction(formData: FormData) {
   }
 
   revalidatePath("/settings");
-  redirect("/settings?message=User%20profile%20updated");
+  redirect("/settings?tab=User%20Profile&message=User%20profile%20updated");
 }
 
 export async function saveNotificationPreferencesAction() {
@@ -766,6 +865,25 @@ export async function refreshComplianceRemindersAction() {
   redirect("/notifications?message=Compliance%20reminders%20refreshed");
 }
 
+export async function refreshAuditReadinessAction() {
+  if (!hasSupabaseEnv()) {
+    redirect("/audit-readiness?error=Supabase%20is%20not%20configured");
+  }
+
+  const companyId = await getCurrentCompanyId();
+
+  if (!companyId) {
+    redirect("/audit-readiness?error=Company%20workspace%20not%20found");
+  }
+
+  await refreshAuditReadinessForCompany(companyId);
+
+  revalidatePath("/");
+  revalidatePath("/audit-readiness");
+  revalidatePath("/audit-readiness/summary");
+  redirect("/audit-readiness?message=Audit%20readiness%20refreshed");
+}
+
 export async function analyzeDocumentAction(formData: FormData) {
   if (!hasSupabaseEnv()) {
     redirect("/ai-analyzer?error=Supabase%20is%20not%20configured");
@@ -777,16 +895,48 @@ export async function analyzeDocumentAction(formData: FormData) {
     redirect("/ai-analyzer?error=Company%20workspace%20not%20found");
   }
 
-  const inputText = required(formData, "inputText");
+  const submittedText = optional(formData, "inputText");
+  const file = formData.get("file");
+  const uploadedFile = file instanceof File && file.size > 0 ? file : null;
+  let inputText = submittedText;
+  let extractionWarning: string | undefined;
+  let extractionMethod: string | undefined;
 
-  if (inputText.length < 20) {
+  if (uploadedFile) {
+    try {
+      validateUploadFile(uploadedFile);
+    } catch (error) {
+      redirect(
+        `/ai-analyzer?error=${encodeURIComponent(
+          error instanceof Error ? error.message : "Invalid upload file",
+        )}`,
+      );
+    }
+
+    if (!inputText) {
+      const extraction = await extractTextFromUpload(uploadedFile);
+
+      if (!extraction) {
+        redirect(
+          "/ai-analyzer?error=Could%20not%20extract%20text%20from%20that%20file.%20Please%20paste%20the%20document%20text%20manually.",
+        );
+      }
+
+      inputText = extraction.text;
+      extractionWarning = extraction.warning;
+      extractionMethod = extraction.method;
+    }
+  }
+
+  if (!inputText || inputText.length < 20) {
     redirect(
-      "/ai-analyzer?error=Please%20paste%20at%20least%2020%20characters%20of%20document%20text",
+      "/ai-analyzer?error=Please%20upload%20a%20readable%20document%20or%20paste%20at%20least%2020%20characters%20of%20document%20text",
     );
   }
 
   const documentId = optional(formData, "documentId");
-  const productName = optional(formData, "productName");
+  const uploadedFileName = uploadedFile?.name.replace(/\.[^.]+$/, "") ?? null;
+  const productName = optional(formData, "productName") ?? uploadedFileName;
   const brandName = optional(formData, "brandName");
 
   try {
@@ -797,6 +947,15 @@ export async function analyzeDocumentAction(formData: FormData) {
       productName,
       brandName,
     });
+
+    if (extractionWarning) {
+      await createNotificationIfNeeded({
+        companyId,
+        title: `${productName ?? "AI Analyzer"} OCR text was shortened`,
+        detail: extractionWarning,
+        priority: "Info",
+      });
+    }
   } catch (error) {
     redirect(
       `/ai-analyzer?error=${encodeURIComponent(
@@ -808,7 +967,13 @@ export async function analyzeDocumentAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/ai-analyzer");
   revalidatePath("/notifications");
-  redirect("/ai-analyzer?message=AI%20analysis%20saved");
+  redirect(
+    `/ai-analyzer?message=${encodeURIComponent(
+      extractionMethod
+        ? `${extractionMethod} extracted and AI analysis saved`
+        : "AI analysis saved",
+    )}`,
+  );
 }
 
 function mapIngredientRisk(row: IngredientRiskRow): IngredientRiskKnowledge {
@@ -845,7 +1010,9 @@ async function saveAiAssessment({
     )
     .returns<IngredientRiskRow[]>();
   const knowledge =
-    risks && risks.length > 0 ? risks.map(mapIngredientRisk) : getFallbackIngredientKnowledge();
+    risks && risks.length > 0
+      ? mergeIngredientKnowledge(risks.map(mapIngredientRisk))
+      : getFallbackIngredientKnowledge();
   const openAiAnalysis = await analyzeWithOpenAi({
     documentText: inputText,
     knowledge,
@@ -918,6 +1085,145 @@ async function updateAuditChecklistForDocument({
     })
     .eq("company_id", companyId)
     .eq("title", title);
+}
+
+async function syncAuditChecklistForDocument({
+  companyId,
+  documentType,
+  documentId,
+  status,
+  removedEvidence = false,
+}: {
+  companyId: string;
+  documentType: DocumentType;
+  documentId: string;
+  status: DocumentStatus;
+  removedEvidence?: boolean;
+}) {
+  const checklistTitleByType: Partial<Record<DocumentType, string>> = {
+    "Supplier Certificate": "Valid halal certificates for tier 1 suppliers",
+    "Ingredient List": "Ingredient traceability logs updated",
+    "SOP Document": "Halal Assurance System manual uploaded",
+    "Audit Evidence": "Recent internal audit evidence uploaded",
+  };
+  const title = checklistTitleByType[documentType];
+
+  if (!title) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const nextStatus = removedEvidence
+    ? "needs_review"
+    : toDatabaseDocumentStatus(status);
+  const description = removedEvidence
+    ? "Evidence file was removed. Upload replacement evidence before audit readiness is confirmed."
+    : "Document metadata was updated from the document workflow.";
+
+  await supabase
+    .from("audit_checklist_items")
+    .update({
+      status: nextStatus,
+      linked_document_id: documentId,
+      description,
+    })
+    .eq("company_id", companyId)
+    .eq("title", title);
+}
+
+async function markAuditChecklistNeedsReviewForDeletedDocument({
+  companyId,
+  documentId,
+}: {
+  companyId: string;
+  documentId: string;
+}) {
+  const supabase = await createClient();
+
+  await supabase
+    .from("audit_checklist_items")
+    .update({
+      status: "needs_review",
+      linked_document_id: null,
+      description:
+        "Linked evidence was deleted. Upload replacement evidence before audit readiness is confirmed.",
+    })
+    .eq("company_id", companyId)
+    .eq("linked_document_id", documentId);
+}
+
+async function refreshAuditReadinessForCompany(companyId: string) {
+  const supabase = await createClient();
+  const { data: documents } = await supabase
+    .from("documents")
+    .select("id,document_type,status,created_at")
+    .eq("company_id", companyId)
+    .returns<AuditDocumentRow[]>();
+
+  const rules = [
+    {
+      title: "Valid halal certificates for tier 1 suppliers",
+      documentType: "supplier_certificate",
+      label: "Supplier Certificate",
+    },
+    {
+      title: "Ingredient traceability logs updated",
+      documentType: "ingredient_list",
+      label: "Ingredient List",
+    },
+    {
+      title: "Halal Assurance System manual uploaded",
+      documentType: "sop_document",
+      label: "SOP Document",
+    },
+    {
+      title: "Recent internal audit evidence uploaded",
+      documentType: "audit_evidence",
+      label: "Audit Evidence",
+    },
+    {
+      title: "Annual facility audit reports collected",
+      documentType: "audit_evidence",
+      label: "Audit Evidence",
+    },
+  ];
+
+  for (const rule of rules) {
+    const bestDocument = (documents ?? [])
+      .filter((document) => document.document_type === rule.documentType)
+      .sort(compareAuditDocuments)[0];
+
+    await supabase
+      .from("audit_checklist_items")
+      .update({
+        status: bestDocument?.status ?? "missing_document",
+        linked_document_id: bestDocument?.id ?? null,
+        description: bestDocument
+          ? `Synced from the current ${rule.label} document evidence status.`
+          : `No current ${rule.label} document is linked. Upload this evidence before audit readiness is confirmed.`,
+      })
+      .eq("company_id", companyId)
+      .eq("title", rule.title);
+  }
+}
+
+function compareAuditDocuments(a: AuditDocumentRow, b: AuditDocumentRow) {
+  const statusRank: Record<string, number> = {
+    complete: 5,
+    valid: 5,
+    expiring_soon: 4,
+    needs_review: 3,
+    expired: 2,
+    missing_document: 1,
+  };
+  const rankDifference =
+    (statusRank[b.status] ?? 0) - (statusRank[a.status] ?? 0);
+
+  if (rankDifference !== 0) {
+    return rankDifference;
+  }
+
+  return Date.parse(b.created_at) - Date.parse(a.created_at);
 }
 
 async function createNotificationIfNeeded({

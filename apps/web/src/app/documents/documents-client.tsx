@@ -27,15 +27,17 @@ const documentStatuses: Array<"All" | DocumentStatus> = [
 
 export function DocumentsClient({
   documents,
+  initialDocumentType = "All",
   initialQuery = "",
   setupMode,
 }: {
   documents: ComplianceDocument[];
+  initialDocumentType?: "All" | DocumentType;
   initialQuery?: string;
   setupMode: boolean;
 }) {
   const [query, setQuery] = useState(initialQuery);
-  const [type, setType] = useState("All");
+  const [type, setType] = useState<"All" | DocumentType>(initialDocumentType);
   const [status, setStatus] = useState("All");
   const filteredDocuments = documents.filter((document) => {
     const matchesQuery = [document.name, document.type, document.supplier]
@@ -63,7 +65,9 @@ export function DocumentsClient({
         </label>
         <select
           className="h-11 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-          onChange={(event) => setType(event.target.value)}
+          onChange={(event) =>
+            setType(event.target.value as "All" | DocumentType)
+          }
           value={type}
         >
           {documentTypes.map((item) => (

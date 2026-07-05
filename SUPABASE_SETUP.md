@@ -1,5 +1,10 @@
 # Supabase Setup - Thayyib
 
+The repository includes a hackathon `.env.example` with a Supabase project URL
+and publishable browser key. That key is safe to use in frontend code when Row
+Level Security is configured correctly. Never commit a Supabase `service_role`
+key, database password, JWT secret, or provider secret.
+
 ## 1. Create Project
 
 Create a Supabase project and copy:
@@ -12,6 +17,19 @@ Add them to `apps/web/.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+```
+
+For the shared hackathon project, copy `apps/web/.env.example`:
+
+```bash
+cd apps/web
+cp .env.example .env.local
+```
+
+For Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
 ```
 
 ## 2. Run Schema
@@ -101,7 +119,8 @@ http://localhost:3000/login
 
 - The app falls back to demo data when the schema is not installed.
 - Once schema and auth are configured, protected pages read/write live Supabase data.
-- AI features are not wired yet by design.
+- AI findings are assistant output only. The app should say "Potential risk
+  detected. Please verify with a qualified halal compliance officer."
 
 ## Google Sign-In
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CheckCircle2, Download, FileWarning, Upload } from "lucide-react";
+import { CheckCircle2, Download, FileWarning, RefreshCw, Upload } from "lucide-react";
+import { refreshAuditReadinessAction } from "@/app/actions";
 import { AppShell } from "@/components/app-shell";
 import {
   Card,
@@ -11,8 +12,17 @@ import {
 } from "@/components/ui";
 import { getAppData } from "@/lib/data/app-data";
 
-export default async function AuditReadinessPage() {
-  const appData = await getAppData();
+type AuditReadinessPageProps = {
+  searchParams: Promise<{
+    error?: string;
+    message?: string;
+  }>;
+};
+
+export default async function AuditReadinessPage({
+  searchParams,
+}: AuditReadinessPageProps) {
+  const [appData, params] = await Promise.all([getAppData(), searchParams]);
   const totalItems = appData.checklistGroups.reduce(
     (total, group) => total + group.total,
     0,
@@ -37,15 +47,24 @@ export default async function AuditReadinessPage() {
         title="Audit Readiness"
         description="Review compliance progress and prepare evidence for upcoming audits."
         action={
-          <Link href="/audit-readiness/summary">
-            <PrimaryButton>
-              <Download className="h-4 w-4" />
-              Export Summary
-            </PrimaryButton>
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <form action={refreshAuditReadinessAction}>
+              <SecondaryButton>
+                <RefreshCw className="h-4 w-4" />
+                Refresh Evidence Status
+              </SecondaryButton>
+            </form>
+            <Link href="/audit-readiness/summary">
+              <PrimaryButton>
+                <Download className="h-4 w-4" />
+                Export Summary
+              </PrimaryButton>
+            </Link>
+          </div>
         }
       />
       <SetupNotice show={appData.setupMode} />
+      <Feedback error={params.error} message={params.message} />
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-[360px_1fr]">
         <Card className="p-6">
@@ -113,7 +132,7 @@ export default async function AuditReadinessPage() {
                     {item.category} - {item.detail}
                   </p>
                 </div>
-                <Link href={getChecklistActionHref(item.action)}>
+                <Link href={getChecklistActionHref(item.label, item.action)}>
                   <SecondaryButton>{item.action}</SecondaryButton>
                 </Link>
               </div>
@@ -162,7 +181,7 @@ export default async function AuditReadinessPage() {
                         </p>
                       </div>
                     </div>
-                    <Link href={getChecklistActionHref(item.action)}>
+                    <Link href={getChecklistActionHref(item.label, item.action)}>
                       <SecondaryButton>
                         {item.action === "Upload" && <Upload className="h-4 w-4" />}
                         {item.action}
@@ -179,10 +198,56 @@ export default async function AuditReadinessPage() {
   );
 }
 
-function getChecklistActionHref(action: string) {
+function Feedback({ error, message }: { error?: string; message?: string }) {
+  if (!error && !message) {
+    return null;
+  }
+
+  return (
+    <div
+      className={`rounded-xl border px-5 py-4 text-sm ${
+        error
+          ? "border-red-100 bg-red-50 text-danger"
+          : "border-emerald-100 bg-emerald-50 text-success"
+      }`}
+    >
+      {error ?? message}
+    </div>
+  );
+}
+
+function getChecklistActionHref(label: string, action: string) {
   if (action === "Upload" || action === "Update") {
-    return "/documents";
+    const documentType = getExpectedDocumentType(label);
+    const params = new URLSearchParams();
+
+    if (documentType) {
+      params.set("documentType", documentType);
+      params.set("q", documentType);
+    }
+
+    return params.size > 0 ? `/documents?${params.toString()}` : "/documents";
   }
 
   return "/documents";
+}
+
+function getExpectedDocumentType(label: string) {
+  if (/certificate/i.test(label)) {
+    return "Supplier Certificate";
+  }
+
+  if (/ingredient/i.test(label)) {
+    return "Ingredient List";
+  }
+
+  if (/sop|assurance system|manual/i.test(label)) {
+    return "SOP Document";
+  }
+
+  if (/audit|facility|evidence/i.test(label)) {
+    return "Audit Evidence";
+  }
+
+  return null;
 }

@@ -222,6 +222,12 @@ export async function getAppData(): Promise<AppData> {
         industrySector: companyResult.data.industry_sector ?? "Food Manufacturing",
         primaryContactEmail: companyResult.data.primary_contact_email ?? user.email ?? "",
       },
+      userProfile: {
+        fullName: getUserMetadataString(user.user_metadata, "full_name") || "Compliance Officer",
+        jobTitle: getUserMetadataString(user.user_metadata, "job_title") || "Halal Compliance Officer",
+        phone: getUserMetadataString(user.user_metadata, "phone"),
+        email: user.email ?? "",
+      },
       suppliers: mapSuppliers(suppliersResult.data ?? []),
       documents: mapDocuments(documentsResult.data ?? []),
       checklistGroups: mapChecklist(checklistResult.data ?? []),
@@ -451,6 +457,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function getString(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function getUserMetadataString(
+  metadata: Record<string, unknown> | undefined,
+  key: string,
+) {
+  const value = metadata?.[key];
+
   return typeof value === "string" ? value : "";
 }
 

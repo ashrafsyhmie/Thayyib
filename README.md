@@ -1,24 +1,63 @@
 # Thayyib
 
-Thayyib is a halal compliance management platform for food manufacturers.
+Thayyib is an AI-assisted halal compliance intelligence platform for food
+manufacturers. It helps teams track suppliers, documents, certificate expiry,
+audit readiness, reminders, and ingredient/document risk signals.
 
-Current MVP focus:
+Important: Thayyib is decision support software. It should flag possible issues
+with language such as "Potential risk detected. Please verify with a qualified
+halal compliance officer." It must not claim that an item is finally halal or
+non-halal.
 
-- Supabase authentication
-- Company workspace foundation
-- Supplier compliance tracking
-- Document metadata and upload flow
-- Certificate expiry monitoring
-- Audit readiness dashboard
-- Notifications
+## Hackathon Quick Start
 
-AI/OCR/RAG features are intentionally parked for now.
+Use this path if you are a judge, teammate, or reviewer who wants to run the
+demo quickly.
 
-## Web App
+### 1. Install prerequisites
+
+- Node.js 22 or newer
+- npm
+- Git
+- A Supabase account if you want to create your own backend project
+
+### 2. Clone and install
 
 ```bash
-cd apps/web
+git clone https://github.com/ashrafsyhmie/Thayyib.git
+cd Thayyib/apps/web
 npm install
+```
+
+### 3. Create the environment file
+
+Copy the example file:
+
+```bash
+cp .env.example .env.local
+```
+
+For Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+The committed example contains the hackathon Supabase project URL and
+publishable browser key:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://eyttlwvxafgiuhmampnw.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_bBmpxXjCCA96H8uAzOEm1w_5TlQpo72
+```
+
+This is not a `service_role` key. Do not commit private keys, database
+passwords, or OpenAI keys. Keep those only in `.env.local` or deployment
+secrets.
+
+### 4. Run the app
+
+```bash
 npm run dev
 ```
 
@@ -28,70 +67,83 @@ Open:
 http://localhost:3000
 ```
 
-## Environment
+### 5. Log in
 
-Create `apps/web/.env.local`:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
-```
-
-## Supabase Setup
-
-Run the SQL in:
-
-```text
-supabase/schema.sql
-```
-
-Use the Supabase SQL editor. This creates:
-
-- companies
-- company_members
-- suppliers
-- documents
-- audit_checklist_items
-- notifications
-- activity_logs
-- private `documents` storage bucket
-- RLS policies
-- new-user company workspace trigger
-
-## Demo User
-
-Default demo credentials:
+Default demo account:
 
 ```text
 Email: thayyib.demo.2026@gmail.com
 Password: ThayyibDemo123!
 ```
 
-Create the user in Supabase Auth manually or run:
+If the shared demo user is not available, create your own account from
+`/register`. The database trigger creates a company workspace for new users.
+
+## Full Supabase Setup
+
+If you want to run the project with your own Supabase backend:
+
+1. Create a Supabase project.
+2. Copy the Project URL and publishable key from Project Settings > API.
+3. Put them in `apps/web/.env.local`.
+4. Open the Supabase SQL editor.
+5. Run `supabase/schema.sql`.
+6. If you are upgrading an older database, also run the relevant files in
+   `supabase/*-upgrade.sql`.
+7. Configure Authentication. For a local demo, disable email confirmation
+   temporarily or confirm users manually.
+8. Optionally seed the demo workspace:
 
 ```bash
 cd apps/web
 npm run seed:demo-user
 ```
 
-If Supabase rate limits signup emails, create the user manually in
-Authentication > Users.
+More detail is available in `SUPABASE_SETUP.md`.
 
-## Google Sign-In
+## AI Analyzer
 
-Google sign-in is available on `/login` and `/register`.
+The app includes OCR/document analysis code. To enable OpenAI-backed analysis,
+add these server-only values to `apps/web/.env.local`:
 
-Configure the Google provider in Supabase first. See:
-
-```text
-SUPABASE_SETUP.md
+```env
+OPENAI_API_KEY=your_openai_project_api_key_here
+OPENAI_MODEL=gpt-5.4-mini
 ```
 
-## Quality Checks
+Never expose `OPENAI_API_KEY` as a `NEXT_PUBLIC_` value and never commit it.
+AI output must be treated as an auditable assistant finding with confidence,
+sources, and human verification.
+
+## Main Features
+
+- Supabase authentication
+- Company workspace foundation
+- Supplier compliance tracking
+- Document metadata and upload flow
+- Certificate expiry monitoring
+- Audit readiness dashboard
+- Notifications
+- OCR and AI-assisted risk analysis foundations
+- Demo data for halal compliance workflows
+
+## Useful Commands
 
 ```bash
 cd apps/web
 npm run lint
 npm run test
 npm run build
+```
+
+## Project Structure
+
+```text
+apps/web/                 Next.js web app
+supabase/                 Database schema, storage setup, upgrade scripts
+context/                  Product, engineering, AI, and business context
+api-testing/              Postman collection and API testing notes
+SUPABASE_SETUP.md         Detailed Supabase configuration guide
+TESTING.md                Test procedure
+MANUAL_TESTING_CHECKLIST.md
 ```

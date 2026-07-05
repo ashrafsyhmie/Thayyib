@@ -129,8 +129,16 @@ export type Company = {
   primaryContactEmail: string;
 };
 
+export type UserProfile = {
+  fullName: string;
+  jobTitle: string;
+  phone: string;
+  email: string;
+};
+
 export type AppData = {
   company: Company;
+  userProfile: UserProfile;
   suppliers: Supplier[];
   documents: ComplianceDocument[];
   checklistGroups: ChecklistGroup[];
