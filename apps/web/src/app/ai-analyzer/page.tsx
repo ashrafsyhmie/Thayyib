@@ -1,4 +1,4 @@
-import { Brain, FileSearch, ShieldAlert } from "lucide-react";
+import { Brain, FileSearch, FileUp, ShieldAlert } from "lucide-react";
 import { analyzeDocumentAction } from "@/app/actions";
 import { AppShell } from "@/components/app-shell";
 import {
@@ -37,16 +37,20 @@ export default async function AiAnalyzerPage({ searchParams }: AiAnalyzerPagePro
             </div>
             <div>
               <h2 className="text-xl font-semibold text-slate-950">
-                Analyze Document Text
+                Analyze Document
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Paste OCR text or an ingredient list. This MVP analyzer uses the
-                halal risk knowledge base and stores an audit trail.
+                Upload a document for OCR or paste ingredient text manually.
+                This MVP analyzer stores an audit trail for review.
               </p>
             </div>
           </div>
 
-          <form action={analyzeDocumentAction} className="mt-6 space-y-4">
+          <form
+            action={analyzeDocumentAction}
+            className="mt-6 space-y-4"
+            encType="multipart/form-data"
+          >
             <Field
               label="Product Name"
               name="productName"
@@ -77,13 +81,27 @@ export default async function AiAnalyzerPage({ searchParams }: AiAnalyzerPagePro
             </label>
             <label className="block">
               <span className="text-sm font-semibold text-slate-900">
-                Document Text
+                Upload Document for OCR
+              </span>
+              <input
+                accept=".pdf,.jpg,.jpeg,.png,.docx,.txt"
+                className="mt-2 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary-soft file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary"
+                name="file"
+                type="file"
+              />
+              <span className="mt-2 flex items-center gap-2 text-xs leading-5 text-slate-500">
+                <FileUp className="h-3.5 w-3.5" />
+                Supports PDF, DOCX, TXT, JPG, and PNG up to 10MB.
+              </span>
+            </label>
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-900">
+                Document Text or OCR Override
               </span>
               <textarea
                 className="mt-2 min-h-52 w-full rounded-lg border border-border px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
                 name="inputText"
-                placeholder="Ingredients: wheat flour, chicken, emulsifier E471, gelatin..."
-                required
+                placeholder="Optional: paste text here, or use this to override the uploaded file OCR."
               />
             </label>
             <PrimaryButton className="w-full">

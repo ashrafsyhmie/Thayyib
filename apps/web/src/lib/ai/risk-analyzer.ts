@@ -29,7 +29,7 @@ export type AnalysisResult = {
 const fallbackKnowledge: IngredientRiskKnowledge[] = [
   {
     name: "Gelatin",
-    commonNames: ["gelatine", "hydrolyzed gelatin"],
+    commonNames: ["gelatine", "hydrolyzed gelatin", "pork gelatin", "beef gelatin"],
     eCode: "E441",
     riskLevel: "high",
     riskReason:
@@ -39,8 +39,19 @@ const fallbackKnowledge: IngredientRiskKnowledge[] = [
     confidenceScore: 0.8,
   },
   {
+    name: "Pork",
+    commonNames: ["porcine", "bacon", "ham", "pork extract", "pork stock", "pork flavor"],
+    eCode: null,
+    riskLevel: "high",
+    riskReason:
+      "Pork or porcine-derived terms are strong halal compliance risks and require immediate escalation.",
+    sourceName: "Ingredient Risk Research Notes",
+    sourceUrl: "context/research/ingredient-risk.md",
+    confidenceScore: 0.9,
+  },
+  {
     name: "Lard",
-    commonNames: ["pork fat"],
+    commonNames: ["pork fat", "animal fat"],
     eCode: null,
     riskLevel: "high",
     riskReason: "Pork-derived fat is a strong halal compliance risk.",
@@ -49,12 +60,67 @@ const fallbackKnowledge: IngredientRiskKnowledge[] = [
     confidenceScore: 0.86,
   },
   {
+    name: "Alcoholic beverage",
+    commonNames: ["wine", "rum", "beer", "brandy", "whisky", "whiskey", "liquor", "vodka"],
+    eCode: null,
+    riskLevel: "high",
+    riskReason:
+      "Alcoholic beverage ingredients have a strong halal compliance concern and should be escalated for review.",
+    sourceName: "Ingredient Risk Research Notes",
+    sourceUrl: "context/research/ingredient-risk.md",
+    confidenceScore: 0.84,
+  },
+  {
     name: "Alcohol",
-    commonNames: ["ethanol", "wine", "rum"],
+    commonNames: ["ethanol", "ethyl alcohol", "alcohol carrier"],
     eCode: null,
     riskLevel: "medium",
     riskReason:
       "Alcohol or alcohol-derived carriers require process and concentration verification.",
+    sourceName: "Ingredient Risk Research Notes",
+    sourceUrl: "context/research/ingredient-risk.md",
+    confidenceScore: 0.7,
+  },
+  {
+    name: "Enzyme",
+    commonNames: ["enzymes", "rennet", "animal enzyme", "microbial enzyme"],
+    eCode: null,
+    riskLevel: "medium",
+    riskReason:
+      "Enzymes may be microbial, plant-based, or animal-derived, so source evidence is needed.",
+    sourceName: "Ingredient Risk Research Notes",
+    sourceUrl: "context/research/ingredient-risk.md",
+    confidenceScore: 0.68,
+  },
+  {
+    name: "Shortening",
+    commonNames: ["animal shortening", "beef shortening", "vegetable shortening"],
+    eCode: null,
+    riskLevel: "medium",
+    riskReason:
+      "Shortening can be plant-based or animal-derived, so supplier formulation evidence is needed.",
+    sourceName: "Ingredient Risk Research Notes",
+    sourceUrl: "context/research/ingredient-risk.md",
+    confidenceScore: 0.66,
+  },
+  {
+    name: "Vinegar",
+    commonNames: ["acetic acid vinegar"],
+    eCode: null,
+    riskLevel: "low",
+    riskReason:
+      "Common food ingredient, but production process and source should still be documented.",
+    sourceName: "Ingredient Risk Research Notes",
+    sourceUrl: "context/research/ingredient-risk.md",
+    confidenceScore: 0.65,
+  },
+  {
+    name: "Vanilla extract",
+    commonNames: ["vanilla flavouring", "natural vanilla extract"],
+    eCode: null,
+    riskLevel: "medium",
+    riskReason:
+      "May contain alcohol as a carrier, so formulation and certificate evidence should be checked.",
     sourceName: "Ingredient Risk Research Notes",
     sourceUrl: "context/research/ingredient-risk.md",
     confidenceScore: 0.7,
@@ -97,6 +163,43 @@ export function getFallbackIngredientKnowledge() {
   return fallbackKnowledge;
 }
 
+export function mergeIngredientKnowledge(
+  primaryKnowledge: IngredientRiskKnowledge[],
+  fallback = fallbackKnowledge,
+) {
+  const merged = new Map<string, IngredientRiskKnowledge>();
+
+  for (const item of fallback) {
+    merged.set(normalize(item.name), item);
+  }
+
+  for (const item of primaryKnowledge) {
+    const key = normalize(item.name);
+    const existing = merged.get(key);
+
+    if (!existing) {
+      merged.set(key, item);
+      continue;
+    }
+
+    merged.set(key, {
+      ...existing,
+      ...item,
+      commonNames: Array.from(
+        new Set([...existing.commonNames, ...item.commonNames]),
+      ),
+      eCode: item.eCode ?? existing.eCode,
+      riskLevel:
+        riskRank[item.riskLevel] >= riskRank[existing.riskLevel]
+          ? item.riskLevel
+          : existing.riskLevel,
+      confidenceScore: Math.max(existing.confidenceScore, item.confidenceScore),
+    });
+  }
+
+  return Array.from(merged.values());
+}
+
 export function analyzeIngredientRisk(
   documentText: string,
   knowledge: IngredientRiskKnowledge[],
@@ -108,7 +211,7 @@ export function analyzeIngredientRisk(
         (term): term is string => Boolean(term),
       );
       const matchedTerm = terms.find((term) =>
-        normalizedText.includes(normalize(term)),
+        containsNormalizedTerm(normalizedText, term),
       );
 
       return matchedTerm ? { risk, matchedTerm } : null;
@@ -192,6 +295,15 @@ export function formatRiskLevel(value: string): HalalRiskLevel {
 
 function normalize(value: string) {
   return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function containsNormalizedTerm(normalizedText: string, term: string) {
+  const normalizedTerm = normalize(term);
+  const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const phrasePattern = escapedTerm.replace(/\s+/g, "\\s+");
+  const pattern = new RegExp(`(^|[^a-z0-9])${phrasePattern}([^a-z0-9]|$)`, "i");
+
+  return pattern.test(normalizedText);
 }
 
 function buildRecommendation(riskLevel: string) {

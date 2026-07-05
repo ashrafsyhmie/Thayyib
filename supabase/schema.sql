@@ -326,7 +326,13 @@ begin
     confidence_score
   )
   values
-    ('Gelatin', array['gelatine', 'hydrolyzed gelatin'], 'E441', 'high', 'Animal-derived ingredient that requires source and halal certificate verification.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.80),
+    ('Gelatin', array['gelatine', 'hydrolyzed gelatin', 'pork gelatin', 'beef gelatin'], 'E441', 'high', 'Animal-derived ingredient that requires source and halal certificate verification.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.80),
+    ('Pork', array['porcine', 'bacon', 'ham', 'pork extract', 'pork stock', 'pork flavor'], null, 'high', 'Pork or porcine-derived terms are strong halal compliance risks and require immediate escalation.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.90),
+    ('Lard', array['pork fat', 'animal fat'], null, 'high', 'Pork-derived fat is a strong halal compliance risk.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.86),
+    ('Alcoholic beverage', array['wine', 'rum', 'beer', 'brandy', 'whisky', 'whiskey', 'liquor', 'vodka'], null, 'high', 'Alcoholic beverage ingredients have a strong halal compliance concern and should be escalated for review.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.84),
+    ('Alcohol', array['ethanol', 'ethyl alcohol', 'alcohol carrier'], null, 'medium', 'Alcohol or alcohol-derived carriers require process and concentration verification.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.70),
+    ('Enzyme', array['enzymes', 'rennet', 'animal enzyme', 'microbial enzyme'], null, 'medium', 'Enzymes may be microbial, plant-based, or animal-derived, so source evidence is needed.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.68),
+    ('Shortening', array['animal shortening', 'beef shortening', 'vegetable shortening'], null, 'medium', 'Shortening can be plant-based or animal-derived, so supplier formulation evidence is needed.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.66),
     ('Mono- and diglycerides of fatty acids', array['emulsifier', 'mono-diglycerides', 'E471'], 'E471', 'medium', 'May be plant-based or animal-derived, so supplier source evidence is needed.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.72),
     ('Vinegar', array['acetic acid vinegar'], null, 'low', 'Common food ingredient, but production process and source should still be documented.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.65),
     ('Vanilla extract', array['vanilla flavouring', 'natural vanilla extract'], null, 'medium', 'May contain alcohol as a carrier, so formulation and certificate evidence should be checked.', 'Thayyib sample knowledge base', 'context/research/ingredient-risk.md', 0.70),
@@ -726,7 +732,7 @@ begin
   from (
     values
       ('Supplier Certificates', 'Cross-contamination prevention agreements signed', 'Supplier agreements are collected for active suppliers.', 'complete', global_certificate_id, 5),
-      ('Supplier Certificates', 'Annual facility audit reports collected', 'Missing 1 document from Prime Ingredients.', 'missing_document', null, 6),
+      ('Supplier Certificates', 'Annual facility audit reports collected', 'No current Audit Evidence document is linked.', 'missing_document', null, 6),
       ('SOP Documents', 'Sanitation Standard Operating Procedure', 'Needs Q3 update.', 'needs_review', sanitation_sop_id, 7)
   ) as seed_data (
     category,

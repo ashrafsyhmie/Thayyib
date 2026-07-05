@@ -41,7 +41,7 @@ export async function signInAction(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    redirect(`/login?error=${encodeURIComponent(formatAuthError(error.message))}`);
   }
 
   redirect(redirectTo);
@@ -75,7 +75,7 @@ export async function signUpAction(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/register?error=${encodeURIComponent(error.message)}`);
+    redirect(`/register?error=${encodeURIComponent(formatAuthError(error.message))}`);
   }
 
   redirect(
@@ -115,7 +115,7 @@ export async function signInWithGoogleAction(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    redirect(`/login?error=${encodeURIComponent(formatAuthError(error.message))}`);
   }
 
   if (data.url) {
@@ -143,7 +143,7 @@ export async function resetPasswordAction(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/forgot-password?error=${encodeURIComponent(error.message)}`);
+    redirect(`/forgot-password?error=${encodeURIComponent(formatAuthError(error.message))}`);
   }
 
   redirect(
@@ -159,4 +159,16 @@ function getOptionalString(formData: FormData, key: string) {
   }
 
   return value.trim();
+}
+
+function formatAuthError(message: string) {
+  if (/invalid login credentials/i.test(message)) {
+    return "Invalid email or password. If this email used another sign-in method before, reset the password and then sign in with email.";
+  }
+
+  if (/user already registered|already been registered/i.test(message)) {
+    return "An account already exists for this email. Try logging in or reset the password.";
+  }
+
+  return message;
 }

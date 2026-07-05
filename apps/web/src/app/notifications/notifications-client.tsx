@@ -60,18 +60,30 @@ export function NotificationsClient({
       <div className="divide-y divide-border">
         {filteredNotifications.map((notification) => (
           <div
-            className={`flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-start sm:justify-between ${
-              notification.unread ? "bg-emerald-50/40" : "bg-white"
+            className={`flex flex-col gap-4 border-l-4 px-6 py-5 sm:flex-row sm:items-start sm:justify-between ${
+              notification.unread
+                ? "border-primary bg-emerald-50/80 shadow-[inset_0_0_0_1px_rgba(4,120,87,0.12)]"
+                : "border-transparent bg-white"
             }`}
             key={notification.id}
           >
             <div className="flex gap-4">
-              <span className="mt-1 rounded-lg bg-white p-2 text-primary shadow-sm">
+              <span
+                className={`mt-1 rounded-lg p-2 shadow-sm ${
+                  notification.unread
+                    ? "bg-primary text-white"
+                    : "bg-white text-primary"
+                }`}
+              >
                 <Bell className="h-5 w-5" />
               </span>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-semibold text-slate-950">
+                  <h2
+                    className={`font-semibold ${
+                      notification.unread ? "text-primary-dark" : "text-slate-950"
+                    }`}
+                  >
                     {notification.title}
                   </h2>
                   {notification.unread && (

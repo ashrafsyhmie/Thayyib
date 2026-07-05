@@ -1,5 +1,4 @@
 import {
-  Activity,
   Bell,
   Brain,
   ClipboardCheck,
@@ -24,7 +23,6 @@ export const navigationItems = [
   { label: "Documents", href: "/documents", icon: FileText },
   { label: "Inventory", href: "/inventory", icon: Package },
   { label: "AI Analyzer", href: "/ai-analyzer", icon: Brain },
-  { label: "API Testing", href: "/api-testing", icon: Activity },
   {
     label: "Audit Readiness",
     href: "/audit-readiness",
@@ -170,7 +168,7 @@ export const checklistGroups: ChecklistGroup[] = [
       {
         id: "demo-checklist-3",
         label: "Annual facility audit reports collected",
-        detail: "Missing 1 document from Prime Ingredients",
+        detail: "No current Audit Evidence document is linked",
         status: "Missing Document",
         action: "Update",
       },
@@ -320,6 +318,12 @@ export const demoAppData: AppData = {
     address: "120 Compliance Way, Shah Alam, Selangor",
     industrySector: "Food Manufacturing",
     primaryContactEmail: "compliance@thayyibdemo.com",
+  },
+  userProfile: {
+    fullName: "Compliance Officer",
+    jobTitle: "Halal Compliance Officer",
+    phone: "",
+    email: "compliance@thayyibdemo.com",
   },
   suppliers,
   documents,

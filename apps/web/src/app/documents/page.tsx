@@ -19,6 +19,7 @@ type DocumentsPageProps = {
     error?: string;
     message?: string;
     supplierId?: string;
+    documentType?: string;
     q?: string;
   }>;
 };
@@ -52,7 +53,11 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
             </p>
           </div>
 
-          <form action={uploadDocumentAction} className="mt-6 space-y-4">
+          <form
+            action={uploadDocumentAction}
+            className="mt-6 space-y-4"
+            encType="multipart/form-data"
+          >
             <Field label="Document Name" name="name" placeholder="Supplier Certificate 2026" />
             <label className="block">
               <span className="text-sm font-semibold text-slate-900">
@@ -60,6 +65,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
               </span>
               <select
                 className="mt-2 h-11 w-full rounded-lg border border-border bg-white px-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                defaultValue={getInitialDocumentType(params.documentType)}
                 name="documentType"
               >
                 {documentTypes.map((type) => (
@@ -125,12 +131,19 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
 
         <DocumentsClient
           documents={documents}
+          initialDocumentType={getInitialDocumentType(params.documentType)}
           initialQuery={params.q ?? ""}
           setupMode={setupMode}
         />
       </section>
     </AppShell>
   );
+}
+
+function getInitialDocumentType(value: string | undefined) {
+  return documentTypes.includes(value as DocumentType)
+    ? (value as DocumentType)
+    : documentTypes[0];
 }
 
 function Field({
