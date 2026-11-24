@@ -18,7 +18,7 @@ import type {
 } from "@/lib/data/types";
 
 export const navigationItems = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Suppliers", href: "/suppliers", icon: Store },
   { label: "Documents", href: "/documents", icon: FileText },
   { label: "Inventory", href: "/inventory", icon: Package },

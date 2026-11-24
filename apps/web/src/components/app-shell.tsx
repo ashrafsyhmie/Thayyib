@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -38,7 +39,7 @@ export function AppShell({ activePath, children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="thayyib-app min-h-screen bg-background text-foreground">
       <Sidebar
         activePath={activePath}
         collapsed={sidebarCollapsed}
@@ -70,7 +71,7 @@ function Sidebar({
 }) {
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-30 hidden overflow-hidden border-r border-border bg-surface-soft transition-[width] duration-200 lg:flex lg:flex-col ${
+      className={`fixed inset-y-0 left-0 z-30 hidden overflow-hidden border-r border-border bg-[#07100e]/86 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)] backdrop-blur-2xl transition-[width] duration-200 lg:flex lg:flex-col ${
         collapsed ? "w-20" : "w-[260px]"
       }`}
     >
@@ -82,22 +83,28 @@ function Sidebar({
         <Link
           aria-label="Thayyib dashboard"
           className="flex min-w-0 items-center gap-3"
-          href="/"
+          href="/dashboard"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
-            T
-          </div>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/8 p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)]">
+            <Image
+              alt=""
+              className="h-full w-full object-contain"
+              height={445}
+              src="/brand/thayyib-mark.png"
+              width={652}
+            />
+          </span>
           <div className={collapsed ? "hidden" : "min-w-0"}>
-            <p className="truncate text-2xl font-bold tracking-tight text-primary">
+            <p className="truncate text-2xl font-extrabold tracking-tight text-white">
               Thayyib
             </p>
-            <p className="truncate text-sm text-slate-600">Halal Compliance</p>
+            <p className="truncate text-sm text-primary">Halal Compliance</p>
           </div>
         </Link>
         <button
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-pressed={collapsed}
-          className={`hidden rounded-lg border border-border bg-white p-2 text-slate-700 shadow-sm transition hover:bg-surface hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 lg:inline-flex ${
+          className={`hidden rounded-lg border border-border bg-white p-2 text-slate-700 shadow-sm transition hover:border-primary/40 hover:bg-surface hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 lg:inline-flex ${
             collapsed ? "absolute -right-4 top-20" : ""
           }`}
           onClick={onToggle}
@@ -116,7 +123,7 @@ function Sidebar({
         <div className={collapsed ? "px-4 pb-6" : "px-6 pb-6"}>
           <Link
             aria-label="New Audit"
-            className={`flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30 ${
+            className={`flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-extrabold text-[#070b0a] shadow-sm transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 ${
               collapsed ? "px-0" : ""
             }`}
             href="/audit-readiness"
@@ -189,7 +196,7 @@ function Sidebar({
 
 function Topbar({ activePath }: { activePath: string }) {
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-surface/95 px-4 shadow-sm backdrop-blur sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-[#07100e]/78 px-4 shadow-sm backdrop-blur-2xl sm:px-6 lg:px-8">
       <MobileNavigationDrawer activePath={activePath} />
       <form action="/documents" className="relative w-full max-w-md">
         <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
@@ -204,14 +211,14 @@ function Topbar({ activePath }: { activePath: string }) {
       <div className="ml-4 flex items-center gap-3">
         <Link
           aria-label="Notifications"
-          className="relative rounded-full p-2 text-slate-700 transition hover:bg-surface-soft"
+          className="relative rounded-full p-2 text-slate-700 transition hover:bg-surface-soft hover:text-primary"
           href="/notifications"
         >
           <Bell className="h-5 w-5" />
           <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-warning ring-2 ring-white" />
         </Link>
         <Link
-          className="hidden items-center gap-2 rounded-full border border-border bg-white py-1 pl-1 pr-3 text-sm font-medium text-slate-800 transition hover:bg-surface-soft sm:flex"
+          className="hidden items-center gap-2 rounded-full border border-border bg-white py-1 pl-1 pr-3 text-sm font-medium text-slate-800 transition hover:border-primary/40 hover:bg-surface-soft sm:flex"
           href="/settings"
         >
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary">
@@ -226,7 +233,7 @@ function Topbar({ activePath }: { activePath: string }) {
 
 function MobileNav({ activePath }: { activePath: string }) {
   return (
-    <nav className="sticky top-16 z-10 flex gap-2 overflow-x-auto border-b border-border bg-white px-4 py-3 lg:hidden">
+    <nav className="sticky top-16 z-10 flex gap-2 overflow-x-auto border-b border-border bg-[#07100e]/86 px-4 py-3 backdrop-blur-2xl lg:hidden">
       {navigationItems.map((item) => {
         const isActive = item.href === activePath;
 

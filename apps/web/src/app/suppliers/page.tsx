@@ -26,7 +26,7 @@ export default async function SuppliersPage({ searchParams }: SuppliersPageProps
       <SetupNotice show={setupMode} />
       <Feedback error={params.error} message={params.message} />
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[360px_1fr]">
+      <section className="grid grid-cols-1 gap-4 2xl:grid-cols-[360px_minmax(0,1fr)]">
         <Card className="p-5">
           <h2 className="text-lg font-semibold text-slate-950">Add Supplier</h2>
           <p className="mt-1 text-sm text-slate-600">

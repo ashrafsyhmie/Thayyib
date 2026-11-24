@@ -29,7 +29,7 @@ export default async function AiAnalyzerPage({ searchParams }: AiAnalyzerPagePro
       <SetupNotice show={appData.setupMode} />
       <Feedback error={params.error} message={params.message} />
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[420px_1fr]">
+      <section className="grid grid-cols-1 gap-4 2xl:grid-cols-[420px_minmax(0,1fr)]">
         <Card className="p-6">
           <div className="flex items-start gap-4">
             <div className="rounded-lg bg-primary-soft p-3 text-primary">

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { CircleHelp, LogOut, Menu, X } from "lucide-react";
@@ -13,7 +14,7 @@ export function MobileNavigationDrawer({ activePath }: { activePath: string }) {
     <>
       <button
         aria-label="Open navigation"
-        className="mr-3 rounded-lg border border-border bg-white p-2 text-slate-700 lg:hidden"
+        className="mr-3 rounded-lg border border-border bg-white p-2 text-slate-700 shadow-sm lg:hidden"
         onClick={() => setOpen(true)}
         type="button"
       >
@@ -27,25 +28,31 @@ export function MobileNavigationDrawer({ activePath }: { activePath: string }) {
       >
         <button
           aria-label="Close navigation"
-          className={`absolute inset-0 bg-slate-950/40 transition-opacity ${
+          className={`absolute inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity ${
             open ? "opacity-100" : "opacity-0"
           }`}
           onClick={() => setOpen(false)}
           type="button"
         />
         <aside
-          className={`absolute inset-y-0 left-0 flex w-[280px] max-w-[82vw] flex-col border-r border-border bg-white shadow-xl transition-transform duration-200 ${
+          className={`absolute inset-y-0 left-0 flex w-[280px] max-w-[82vw] flex-col border-r border-border bg-[#07100e]/95 shadow-xl backdrop-blur-2xl transition-transform duration-200 ${
             open ? "translate-x-0" : "-translate-x-full"
           }`}
         >
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <Link
               className="flex items-center gap-3"
-              href="/"
+              href="/dashboard"
               onClick={() => setOpen(false)}
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
-                T
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/8 p-1.5">
+                <Image
+                  alt=""
+                  className="h-full w-full object-contain"
+                  height={445}
+                  src="/brand/thayyib-mark.png"
+                  width={652}
+                />
               </span>
               <span>
                 <span className="block text-xl font-bold tracking-tight text-primary">
@@ -58,7 +65,7 @@ export function MobileNavigationDrawer({ activePath }: { activePath: string }) {
             </Link>
             <button
               aria-label="Close navigation"
-              className="rounded-lg border border-border p-2 text-slate-600"
+              className="rounded-lg border border-border bg-white p-2 text-slate-600"
               onClick={() => setOpen(false)}
               type="button"
             >

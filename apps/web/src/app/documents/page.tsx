@@ -39,7 +39,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
       <SetupNotice show={setupMode} />
       <Feedback error={params.error} message={params.message} />
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[380px_1fr]">
+      <section className="grid grid-cols-1 gap-4 2xl:grid-cols-[380px_minmax(0,1fr)]">
         <Card className="p-6">
           <div className="rounded-xl border-2 border-dashed border-emerald-200 bg-surface-soft p-6 text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white text-primary shadow-sm">

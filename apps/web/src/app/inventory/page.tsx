@@ -173,7 +173,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
         </Card>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[380px_1fr]">
+      <section className="grid grid-cols-1 gap-4 2xl:grid-cols-[380px_minmax(0,1fr)]">
         <Card className="p-5">
           <div className="flex items-start gap-4">
             <div className="rounded-lg bg-primary-soft p-3 text-primary">

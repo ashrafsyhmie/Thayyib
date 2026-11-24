@@ -1,5 +1,5 @@
+import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck } from "lucide-react";
 import { signInAction } from "@/app/auth/actions";
 import { PasswordInput } from "@/components/password-input";
 
@@ -15,12 +15,16 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <section className="w-full max-w-md rounded-xl border border-border bg-white p-8 shadow-sm">
+    <main className="thayyib-auth flex min-h-screen items-center justify-center bg-background px-4 py-10">
+      <section className="w-full max-w-md rounded-xl border border-border bg-white p-8 shadow-sm backdrop-blur-xl">
         <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-primary">
-            <BadgeCheck className="h-7 w-7" />
-          </div>
+          <Image
+            alt="Thayyib"
+            className="mx-auto h-20 w-auto object-contain"
+            height={326}
+            src="/brand/thayyib-logo-horizontal.png"
+            width={928}
+          />
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-primary">
             Thayyib
           </h1>
@@ -39,7 +43,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         )}
 
         <form action={signInAction} className="mt-8 space-y-5">
-          <input name="redirectTo" type="hidden" value={params.redirectTo ?? "/"} />
+          <input name="redirectTo" type="hidden" value={params.redirectTo ?? "/dashboard"} />
           <label className="block">
             <span className="text-sm font-semibold text-slate-900">
               Email Address

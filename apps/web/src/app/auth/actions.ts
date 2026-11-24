@@ -22,7 +22,7 @@ function getRedirectPath(formData: FormData) {
     return redirectTo;
   }
 
-  return "/";
+  return "/dashboard";
 }
 
 export async function signInAction(formData: FormData) {

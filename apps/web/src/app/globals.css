@@ -1,19 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --surface: #ffffff;
-  --surface-soft: #f0fdf4;
-  --border: #e2e8f0;
-  --muted: #64748b;
-  --primary: #047857;
-  --primary-dark: #065f46;
-  --primary-soft: #d1fae5;
-  --success: #16a34a;
-  --warning: #d97706;
-  --danger: #dc2626;
-  --info: #2563eb;
+  --background: #070b0a;
+  --foreground: #f7fff9;
+  --surface: rgba(255, 255, 255, 0.055);
+  --surface-soft: rgba(94, 210, 156, 0.1);
+  --border: rgba(255, 255, 255, 0.13);
+  --muted: rgba(226, 245, 235, 0.68);
+  --primary: #5ed29c;
+  --primary-dark: #39b981;
+  --primary-soft: rgba(94, 210, 156, 0.16);
+  --success: #5ed29c;
+  --warning: #ffd36b;
+  --danger: #ff6b7a;
+  --info: #7ac7ff;
 }
 
 @theme inline {
@@ -43,6 +43,35 @@ body {
   box-sizing: border-box;
 }
 
+.liquid-glass-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
+}
+
+.liquid-glass-card::before {
+  pointer-events: none;
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.82),
+    rgba(255, 255, 255, 0.06)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
 .sidebar-scrollbar {
   scrollbar-color: var(--primary) transparent;
   scrollbar-width: thin;
@@ -66,6 +95,135 @@ body {
 .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
   background-clip: content-box;
+}
+
+.thayyib-app,
+.thayyib-auth {
+  background:
+    radial-gradient(circle at 72% 12%, rgba(94, 210, 156, 0.16), transparent 32rem),
+    radial-gradient(circle at 14% 2%, rgba(213, 174, 85, 0.12), transparent 26rem),
+    linear-gradient(135deg, rgba(94, 210, 156, 0.06), transparent 38%),
+    #070b0a;
+  color: #f7fff9;
+}
+
+.thayyib-app .text-slate-950,
+.thayyib-auth .text-slate-950,
+.thayyib-app .text-slate-900,
+.thayyib-auth .text-slate-900,
+.thayyib-app .text-slate-800,
+.thayyib-auth .text-slate-800 {
+  color: rgba(247, 255, 249, 0.94) !important;
+}
+
+.thayyib-app .text-slate-700,
+.thayyib-auth .text-slate-700,
+.thayyib-app .text-slate-600,
+.thayyib-auth .text-slate-600,
+.thayyib-app .text-slate-500,
+.thayyib-auth .text-slate-500 {
+  color: rgba(226, 245, 235, 0.66) !important;
+}
+
+.thayyib-app .bg-white,
+.thayyib-auth .bg-white,
+.thayyib-app .bg-surface,
+.thayyib-auth .bg-surface,
+.thayyib-app .bg-surface-soft,
+.thayyib-auth .bg-surface-soft {
+  background-color: rgba(255, 255, 255, 0.055) !important;
+}
+
+.thayyib-app .bg-surface-soft\/60,
+.thayyib-auth .bg-surface-soft\/60,
+.thayyib-app .bg-surface-soft\/70,
+.thayyib-auth .bg-surface-soft\/70 {
+  background-color: rgba(94, 210, 156, 0.09) !important;
+}
+
+.thayyib-app .bg-emerald-50,
+.thayyib-auth .bg-emerald-50,
+.thayyib-app .bg-emerald-50\/30,
+.thayyib-auth .bg-emerald-50\/30,
+.thayyib-app .bg-emerald-50\/80,
+.thayyib-auth .bg-emerald-50\/80 {
+  background-color: rgba(94, 210, 156, 0.14) !important;
+}
+
+.thayyib-app .bg-amber-50,
+.thayyib-auth .bg-amber-50,
+.thayyib-app .bg-amber-50\/60,
+.thayyib-auth .bg-amber-50\/60 {
+  background-color: rgba(213, 174, 85, 0.14) !important;
+}
+
+.thayyib-app .bg-red-50,
+.thayyib-auth .bg-red-50 {
+  background-color: rgba(255, 107, 122, 0.13) !important;
+}
+
+.thayyib-app .bg-blue-50,
+.thayyib-auth .bg-blue-50,
+.thayyib-app .bg-slate-100,
+.thayyib-auth .bg-slate-100,
+.thayyib-app .bg-slate-200,
+.thayyib-auth .bg-slate-200,
+.thayyib-app .bg-slate-50,
+.thayyib-auth .bg-slate-50 {
+  background-color: rgba(122, 199, 255, 0.12) !important;
+}
+
+.thayyib-app .bg-primary,
+.thayyib-auth .bg-primary {
+  color: #070b0a !important;
+}
+
+.thayyib-app .border-border,
+.thayyib-auth .border-border,
+.thayyib-app .border-slate-200,
+.thayyib-auth .border-slate-200,
+.thayyib-app .border-emerald-100,
+.thayyib-auth .border-emerald-100,
+.thayyib-app .border-emerald-200,
+.thayyib-auth .border-emerald-200,
+.thayyib-app .border-amber-100,
+.thayyib-auth .border-amber-100,
+.thayyib-app .border-amber-200,
+.thayyib-auth .border-amber-200,
+.thayyib-app .border-red-100,
+.thayyib-auth .border-red-100 {
+  border-color: rgba(255, 255, 255, 0.13) !important;
+}
+
+.thayyib-app input,
+.thayyib-app select,
+.thayyib-app textarea,
+.thayyib-auth input,
+.thayyib-auth select,
+.thayyib-auth textarea {
+  background-color: rgba(3, 8, 7, 0.68);
+  color: rgba(247, 255, 249, 0.94);
+  border-color: rgba(255, 255, 255, 0.13);
+}
+
+.thayyib-app input::placeholder,
+.thayyib-app textarea::placeholder,
+.thayyib-auth input::placeholder,
+.thayyib-auth textarea::placeholder {
+  color: rgba(226, 245, 235, 0.45);
+}
+
+.thayyib-app table {
+  color: rgba(247, 255, 249, 0.88);
+}
+
+.thayyib-app .shadow-sm,
+.thayyib-auth .shadow-sm,
+.thayyib-app .shadow-xl,
+.thayyib-auth .shadow-xl {
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.08),
+    0 24px 70px rgba(0, 0, 0, 0.28) !important;
 }
 
 @keyframes loading-bar {

@@ -43,7 +43,7 @@ export default async function ImprovedDashboardPage() {
   );
 
   return (
-    <AppShell activePath="/">
+    <AppShell activePath="/dashboard">
       <PageHeader
         title="Compliance Command Center"
         description="A clearer dashboard focused on what needs attention before the next halal audit."
@@ -53,7 +53,7 @@ export default async function ImprovedDashboardPage() {
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-surface-soft"
               href="/"
             >
-              Compare Old Dashboard
+              View Landing Page
             </Link>
             <Link
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark"

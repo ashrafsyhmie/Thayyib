@@ -83,7 +83,7 @@ export function NavigationProgress() {
         <div className="h-full w-1/2 animate-[loading-bar_1.2s_ease-in-out_infinite] rounded-r-full bg-primary" />
       </div>
       <div className="mx-auto mt-3 flex max-w-7xl justify-end px-4 sm:px-6 lg:px-8">
-        <span className="rounded-full border border-emerald-100 bg-white/95 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
+        <span className="rounded-full border border-white/15 bg-[#07100e]/90 px-3 py-1 text-xs font-semibold text-primary shadow-sm backdrop-blur-xl">
           Loading...
         </span>
       </div>

@@ -1,6 +1,6 @@
 export default function Loading() {
   return (
-    <main className="min-h-screen bg-background p-6">
+    <main className="thayyib-app min-h-screen bg-background p-6">
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="h-10 w-64 animate-pulse rounded-lg bg-slate-200" />
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
@@ -13,4 +13,3 @@ export default function Loading() {
     </main>
   );
 }
-

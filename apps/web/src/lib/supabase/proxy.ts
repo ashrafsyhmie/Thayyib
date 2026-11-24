@@ -3,7 +3,6 @@ import { createServerClient } from "@supabase/ssr";
 import { getSupabaseEnv, hasSupabaseEnv } from "@/lib/supabase/env";
 
 const protectedRoutes = [
-  "/",
   "/ai-analyzer",
   "/api-testing",
   "/audit-readiness",
@@ -77,7 +76,7 @@ export async function updateSession(request: NextRequest) {
 
   if (claims && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
   }

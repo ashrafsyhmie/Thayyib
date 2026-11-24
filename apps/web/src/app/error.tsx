@@ -7,8 +7,8 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4">
-      <section className="w-full max-w-lg rounded-xl border border-border bg-white p-8 text-center shadow-sm">
+    <main className="thayyib-auth flex min-h-screen items-center justify-center bg-background px-4">
+      <section className="w-full max-w-lg rounded-xl border border-border bg-white p-8 text-center shadow-sm backdrop-blur-xl">
         <h1 className="text-2xl font-bold text-slate-950">
           Unable to load this page
         </h1>
@@ -27,4 +27,3 @@ export default function Error({
     </main>
   );
 }
-
